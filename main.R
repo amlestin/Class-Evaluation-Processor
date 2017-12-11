@@ -48,26 +48,26 @@ for (cur_eval in 3:nrow(d)) {
     pcol <-  paste("P", pctr_char, sep = "")
     
     
-    # add one to the pctr because Q2 corresponds to P1's review
+    # add one to the pctr because Q3 corresponds to P1's review
     qctr_char <- as.character(pctr + 1)
     qcol <- paste("Q", qctr_char, sep = "")
     
-    # the answer is the value at qcol
+    # the question answer/review is the value at qcol
     review <- d[cur_eval, qcol]
     # level (integer) to character
     review <- as.character(review)
     
-    
     # retrieve the professor's past reviews in reviewl and add this one to them
     prof <- as.character(d[cur_eval, pcol])
+    # save the current eval's course title into a variable
+    course_title <- as.character(d[cur_eval, "Course.Title"])
     
     if (prof != "") {
       # some respondents skip questions
-      if (review != ""){
-        reviewl[[prof]]$ratings <- c(reviewl[[prof]]$ratings, review)
+      if (review != "") {
+        # reviewl[[prof]]$courses[[course_title]]$ratings <- c(reviewl[[prof]]$courses[[course_title]]$ratings, review)
+        reviewl[[prof]]$courses[[course_title]]$ratings <- c(reviewl[[prof]]$courses[[course_title]]$rating, review);
       }
-      reviewl[[prof]]$courses <- c(reviewl[[prof]]$courses, as.character(d[cur_eval, "Course.Title"]))
-      reviewl[[prof]]$courses <- unique(reviewl[[prof]][["courses"]])
     }
   }
 }
@@ -107,8 +107,10 @@ for (i in 1:nrow(similar)) {
   #reviewl[[fname]] <- c(reviewl[[fname]], reviewl[[sname]])
   #reviewl[[fname]]$courses <- c(reviewl[[fname]]$courses, reviewl[[sname]]$courses)
   
-  reviewl[[fname]]$courses <- c(reviewl[[fname]]$courses, reviewl[[sname]]$courses)
-  reviewl[[fname]]$ratings <- c(reviewl[[fname]]$ratings, reviewl[[sname]]$ratings)
+  reviewl[[fname]]$courses <-
+    c(reviewl[[fname]]$courses, reviewl[[sname]]$courses)
+  reviewl[[fname]]$ratings <-
+    c(reviewl[[fname]]$ratings, reviewl[[sname]]$ratings)
   reviewl[[sname]] <- NULL
 }
 
@@ -138,7 +140,7 @@ Counts <- c()
 # for each professor in reviewl
 for (i in 1:nrow(reviewl)) {
   # row is all of their reviews
-  row <- reviewl[i,]
+  row <- reviewl[i, ]
   
   # number of "Excellent" reviews in row
   ecount <- length(which(row == "Excellent"))
@@ -192,7 +194,8 @@ write.table(similar,
 # do not include the table's row.names column
 INPUT_FILENAME <- sub('\\..*$', '', basename(INPUT_FILENAME))
 
-OUTPUT_FILENAME <- paste("Report-", INPUT_FILENAME, ".csv", sep = "")
+OUTPUT_FILENAME <-
+  paste("Report-", INPUT_FILENAME, ".csv", sep = "")
 write.table(out,
             OUTPUT_FILENAME,
             sep = ",",

@@ -114,7 +114,7 @@ for (i in 1:nrow(similar)) {
   reviewl[[sname]] <- NULL
 }
 
-profnames <- names(reviewl)
+ profnames <- names(reviewl)
 # makes reviewl easier to iterate over
 reviewl <- lapply(reviewl, unlist)
 # find the most number of reviews any professor received
@@ -131,42 +131,41 @@ reviewl <-
 #reviewl[[5]]["ratings"]
 
 
-
-
 # Finds each professor's numeric average review and the rating counts used to calculate the average
-Averages <- c()
-Counts <- c()
 
 # for each professor in reviewl
-for (i in 1:nrow(reviewl)) {
-  # row is all of their reviews
-  row <- reviewl[i, ]
+for (prof in 1:length(reviewl)) {
+  num_courses <- length(reviewl[[prof]]$courses)
   
-  # number of "Excellent" reviews in row
-  ecount <- length(which(row == "Excellent"))
-  
-  vgcount <- length(which(row == "Very Good"))
-  
-  gcount <- length(which(row == "Good"))
-  
-  fcount <- length(which(row == "Fair"))
-  
-  pcount <- length(which(row == "Poor"))
-  
-  # vector of all rating counts
-  all <- c(ecount, vgcount, gcount, fcount, pcount)
-  
-  # adds the rating counts as a row of matrix Counts
-  Counts <- rbind(Counts, all)
-  
-  # sum of all ratings, i.e., number of ratings the professor received
-  sum <- sum(all)
-  
-  # calculates a weighted average
-  average <-
-    (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount) / sum
-  
-  Averages <- c(Averages, average)
+  for (cur_course in 1:num_courses) {
+    reviews <- reviewl[[prof]]$courses[[cur_course]]$ratings
+    
+    # number of "Excellent" reviews in row
+    ecount <- length(which(reviews == "Excellent"))
+    
+    vgcount <- length(which(reviews == "Very Good"))
+    
+    gcount <- length(which(reviews == "Good"))
+    
+    fcount <- length(which(reviews == "Fair"))
+    
+    pcount <- length(which(reviews == "Poor"))
+    
+    # vector of all rating counts
+    freqs <- c(ecount, vgcount, gcount, fcount, pcount)
+    names(freqs) <- c("Excellent", "Very Good", "Good", "Fair", "Poor")
+    
+    reviewl[[prof]]$courses[[cur_course]][["freqs"]] <- freqs
+    
+    # sum of all ratings, i.e., number of ratings the professor received
+    sum <- sum(freqs)
+    
+    # calculates a weighted average
+    average <-
+      (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount) / sum
+    reviewl[[prof]]$courses[[cur_course]][["average"]] <- average
+    
+  }
 }
 
 out <- cbind(profnames, Averages, Counts, reviewl)

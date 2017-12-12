@@ -8,7 +8,7 @@ for (i in 1:nrow(c)){
  c_num <- as.character(c[i, "Course.Number"])
  s_num <- as.character(c[i, "Sequence.Number"])
  
- code <- paste(paste(s_code, c_num, sep=""),s_num, sep=".") 
+ code <- paste(s_code, c_num, s_num, sep=".") 
  all_codes <- c(all_codes, code)
 }
 

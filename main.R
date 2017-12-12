@@ -4,7 +4,7 @@
 # opens a window to select the input file
 INPUT_FILENAME <- file.choose()
 
-# read the csv file in ("FILENAME.csv")
+# reads the csv file in ("FILENAME.csv")
 d <- read.csv(INPUT_FILENAME)
 
 # vector of character representation of all professor names used in the file
@@ -36,8 +36,7 @@ contacts <- unique(contacts)
 
 
 
-# Gets all reviews for each professor in contacts and adds them to reviewl, e.g., reviewl[[prof]] gives
-# [1] "Good" "Fair"
+# Gets all reviews for each professor in contacts and adds them to reviewl
 reviewl <- list()
 for (cur_eval in 3:nrow(d)) {
   # for each P column, e.g, P1
@@ -46,7 +45,6 @@ for (cur_eval in 3:nrow(d)) {
     pctr_char <- as.character(pctr)
     # combine the character and number to have a valid column index, e.g., "P1"
     pcol <-  paste("P", pctr_char, sep = "")
-    
     
     # add one to the pctr because Q3 corresponds to P1's review
     qctr_char <- as.character(pctr + 1)
@@ -57,16 +55,15 @@ for (cur_eval in 3:nrow(d)) {
     # level (integer) to character
     review <- as.character(review)
     
-    # retrieve the professor's past reviews in reviewl and add this one to them
-    prof <- as.character(d[cur_eval, pcol])
+    prof_name <- as.character(d[cur_eval, pcol])
     # save the current eval's course title into a variable
     course_title <- as.character(d[cur_eval, "Course.Title"])
-    
-    if (prof != "") {
+
+    if (prof_name != "") {
       # some respondents skip questions
       if (review != "") {
         # reviewl[[prof]]$courses[[course_title]]$ratings <- c(reviewl[[prof]]$courses[[course_title]]$ratings, review)
-        reviewl[[prof]]$courses[[course_title]]$ratings <- c(reviewl[[prof]]$courses[[course_title]]$rating, review);
+        reviewl[[prof_name]]$courses[[course_title]]$ratings <- c(reviewl[[prof_name]]$courses[[course_title]]$rating, review);
       }
     }
   }
@@ -103,10 +100,6 @@ for (i in 1:nrow(similar)) {
   
   sname <- similar[i, 2]
   
-  
-  #reviewl[[fname]] <- c(reviewl[[fname]], reviewl[[sname]])
-  #reviewl[[fname]]$courses <- c(reviewl[[fname]]$courses, reviewl[[sname]]$courses)
-  
   reviewl[[fname]]$courses <-
     c(reviewl[[fname]]$courses, reviewl[[sname]]$courses)
   reviewl[[fname]]$ratings <-
@@ -114,7 +107,7 @@ for (i in 1:nrow(similar)) {
   reviewl[[sname]] <- NULL
 }
 
- profnames <- names(reviewl)
+profnames <- names(reviewl)
 # makes reviewl easier to iterate over
 reviewl <- lapply(reviewl, unlist)
 # find the most number of reviews any professor received
@@ -128,13 +121,9 @@ reviewl <-
       z
     )))))
 
-#reviewl[[5]]["ratings"]
 
-
-# Finds each professor's numeric average review and the rating counts used to calculate the average
-
+# Outputs a report in the format [Professor's name].csv in Name, Course Code + Section, Average, Frequencies format
 # for each professor in reviewl
-
 
 for (prof in 1:length(reviewl)) {
   num_courses <- length(reviewl[[prof]]$courses)
@@ -175,17 +164,13 @@ for (prof in 1:length(reviewl)) {
     line <- c(prof_name, cur_course_name, reviewl[[prof]]$courses[[cur_course]][["response_rate"]], reviewl[[prof]]$courses[[cur_course]][["average"]], reviewl[[prof]]$courses[[cur_course]][["freqs"]])
     target <- rbind(target, line)
   }
-  #target rbind
-  if (prof_name == "Patricia Kruk") {
-    print(target)
-    prof_name <- gsub(" ", "_", prof_name)
-    PROF_REPORT_NAME <- paste(prof_name, ".csv", sep="")
-    write.table(target,
+  colnames(target) <- c("Name", "Course Title", "Response Rate", "Average Eval", "Excellent", "Very Good", "Good", "Fair", "Poor")
+  prof_name <- gsub(" ", "_", prof_name)
+  PROF_REPORT_NAME <- paste(prof_name, ".csv", sep="")
+  write.table(target,
                 PROF_REPORT_NAME,
                 sep = ",",
                 row.names = FALSE)
-  }
-
 }
 
 

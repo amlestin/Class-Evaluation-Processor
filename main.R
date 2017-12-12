@@ -134,9 +134,13 @@ reviewl <-
 # Finds each professor's numeric average review and the rating counts used to calculate the average
 
 # for each professor in reviewl
+
+
 for (prof in 1:length(reviewl)) {
   num_courses <- length(reviewl[[prof]]$courses)
+  prof_name <- names(reviewl[prof]) 
   
+  target <- c()
   for (cur_course in 1:num_courses) {
     reviews <- reviewl[[prof]]$courses[[cur_course]]$ratings
     
@@ -153,7 +157,7 @@ for (prof in 1:length(reviewl)) {
     
     # vector of all rating counts
     freqs <- c(ecount, vgcount, gcount, fcount, pcount)
-    names(freqs) <- c("Excellent", "Very Good", "Good", "Fair", "Poor")
+    #names(freqs) <- c("Excellent", "Very Good", "Good", "Fair", "Poor")
     
     reviewl[[prof]]$courses[[cur_course]][["freqs"]] <- freqs
     
@@ -165,10 +169,27 @@ for (prof in 1:length(reviewl)) {
       (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount) / sum
     reviewl[[prof]]$courses[[cur_course]][["average"]] <- average
     
+    cur_course_name <- names(reviewl[[prof]]$courses[cur_course])
+    reviewl[[prof]]$courses[[cur_course]][["response_rate"]] <- sum/course_sizes[[cur_course_name]]
+    
+    line <- c(prof_name, cur_course_name, reviewl[[prof]]$courses[[cur_course]][["response_rate"]], reviewl[[prof]]$courses[[cur_course]][["average"]], reviewl[[prof]]$courses[[cur_course]][["freqs"]])
+    target <- rbind(target, line)
   }
+  #target rbind
+  if (prof_name == "Patricia Kruk") {
+    print(target)
+    prof_name <- gsub(" ", "_", prof_name)
+    PROF_REPORT_NAME <- paste(prof_name, ".csv", sep="")
+    write.table(target,
+                PROF_REPORT_NAME,
+                sep = ",",
+                row.names = FALSE)
+  }
+
 }
 
-out <- cbind(profnames, Averages, Counts, reviewl)
+
+out <- cbind(profnames, , reviewl)
 
 # column labels for the Counts variables
 ratings <- c("Excellent", "Very Good", "Good", "Fair", "Poor")

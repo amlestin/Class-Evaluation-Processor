@@ -58,12 +58,17 @@ for (cur_eval in 3:nrow(d)) {
     prof_name <- as.character(d[cur_eval, pcol])
     # save the current eval's course title into a variable
     course_title <- as.character(d[cur_eval, "Course.Title"])
+    subject_code <- as.character(d[cur_eval, "Subject.Code"])
+    course_number <- as.character(d[cur_eval, "Course.Number"])
+    sequence_number <- as.character(d[cur_eval, "Sequence.Number"])
+    
+    course_code <- paste(subject_code, course_number, sequence_number, sep=".")
 
     if (prof_name != "") {
       # some respondents skip questions
       if (review != "") {
         # reviewl[[prof]]$courses[[course_title]]$ratings <- c(reviewl[[prof]]$courses[[course_title]]$ratings, review)
-        reviewl[[prof_name]]$courses[[course_title]]$ratings <- c(reviewl[[prof_name]]$courses[[course_title]]$rating, review);
+        reviewl[[prof_name]]$courses[[course_title]][[course_code]]$ratings <- c(reviewl[[prof_name]]$courses[[course_title]][[course_code]]$rating, review);
       }
     }
   }
@@ -131,38 +136,42 @@ for (prof in 1:length(reviewl)) {
   
   target <- c()
   for (cur_course in 1:num_courses) {
-    reviews <- reviewl[[prof]]$courses[[cur_course]]$ratings
+    num_sections <- length(reviewl[[prof]]$courses[[cur_course]])
     
-    # number of "Excellent" reviews in row
-    ecount <- length(which(reviews == "Excellent"))
-    
-    vgcount <- length(which(reviews == "Very Good"))
-    
-    gcount <- length(which(reviews == "Good"))
-    
-    fcount <- length(which(reviews == "Fair"))
-    
-    pcount <- length(which(reviews == "Poor"))
-    
-    # vector of all rating counts
-    freqs <- c(ecount, vgcount, gcount, fcount, pcount)
-    #names(freqs) <- c("Excellent", "Very Good", "Good", "Fair", "Poor")
-    
-    reviewl[[prof]]$courses[[cur_course]][["freqs"]] <- freqs
-    
-    # sum of all ratings, i.e., number of ratings the professor received
-    sum <- sum(freqs)
-    
-    # calculates a weighted average
-    average <-
-      (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount) / sum
-    reviewl[[prof]]$courses[[cur_course]][["average"]] <- average
-    
-    cur_course_name <- names(reviewl[[prof]]$courses[cur_course])
-    reviewl[[prof]]$courses[[cur_course]][["response_rate"]] <- sum/course_sizes[[cur_course_name]]
-    
-    line <- c(prof_name, cur_course_name, reviewl[[prof]]$courses[[cur_course]][["response_rate"]], reviewl[[prof]]$courses[[cur_course]][["average"]], reviewl[[prof]]$courses[[cur_course]][["freqs"]])
-    target <- rbind(target, line)
+      for (cur_section in 1:num_section) {
+      reviews <- reviewl[[prof]]$courses[[cur_course]][[cur_section]]$ratings
+      
+      # number of "Excellent" reviews in row
+      ecount <- length(which(reviews == "Excellent"))
+      
+      vgcount <- length(which(reviews == "Very Good"))
+      
+      gcount <- length(which(reviews == "Good"))
+      
+      fcount <- length(which(reviews == "Fair"))
+      
+      pcount <- length(which(reviews == "Poor"))
+      
+      # vector of all rating counts
+      freqs <- c(ecount, vgcount, gcount, fcount, pcount)
+      #names(freqs) <- c("Excellent", "Very Good", "Good", "Fair", "Poor")
+      
+      reviewl[[prof]]$courses[[cur_course]][[cur_section]][["freqs"]] <- freqs
+      
+      # sum of all ratings, i.e., number of ratings the professor received
+      sum <- sum(freqs)
+      
+      # calculates a weighted average
+      average <-
+        (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount) / sum
+      reviewl[[prof]]$courses[[cur_course]][["average"]] <- average
+      
+      cur_course_name <- names(reviewl[[prof]]$courses[cur_course])
+      reviewl[[prof]]$courses[[cur_course]][["response_rate"]] <- sum/course_sizes[[cur_course_name]]
+      
+      line <- c(prof_name, cur_course_name, reviewl[[prof]]$courses[[cur_course]][["response_rate"]], reviewl[[prof]]$courses[[cur_course]][["average"]], reviewl[[prof]]$courses[[cur_course]][["freqs"]])
+      target <- rbind(target, line)
+    }
   }
   colnames(target) <- c("Name", "Course Title", "Response Rate", "Average Eval", "Excellent", "Very Good", "Good", "Fair", "Poor")
   prof_name <- gsub(" ", "_", prof_name)
@@ -174,7 +183,6 @@ for (prof in 1:length(reviewl)) {
 }
 
 
-out <- cbind(profnames, , reviewl)
 
 # column labels for the Counts variables
 ratings <- c("Excellent", "Very Good", "Good", "Fair", "Poor")

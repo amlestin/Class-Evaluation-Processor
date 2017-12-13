@@ -14,7 +14,25 @@ winDialog(
 )
 CONTACTS_FILENAME <- file.choose()
 
-c <- read.csv(CONTACTS_FILENAME)
+student_contacts <- read.csv(CONTACTS_FILENAME)
+
+all_codes <- c()
+for (i in 1:nrow(student_contacts)){
+  s_code <- as.character(student_contacts[i, "Subject.Code"])
+  c_num <- as.character(student_contacts[i, "Course.Number"])
+  s_num <- as.character(student_contacts[i, "Sequence.Number"])
+  
+  code <- paste(s_code, c_num, s_num, sep=".") 
+  all_codes <- c(all_codes, code)
+}
+
+unique_codes <- unique(all_codes)
+course_sizes <- list(all_codes)
+
+for (code in 1:length(unique_codes)){
+  cur_code <- unique_codes[code]
+  course_sizes[[cur_code]] <- length(which(all_codes==cur_code))  
+}
 
 # vector of character representations of all professor names used in the file
 contacts <- c(
@@ -128,7 +146,7 @@ write.table(similar,
             col.names = FALSE,
             row.names = FALSE)
 
-# Outputs a report in the format [Professor's name].csv in Name, Course Code + Section, Average, Frequencies format
+# Outputs a report in the format [Professor's name].csv in Course Code, Course Title, Reponse Rate, Num Evals, Course Size, Average, Frequencies format
 # for each professor in reviewl
 
 for (prof in 1:length(reviewl)) {
@@ -172,7 +190,7 @@ for (prof in 1:length(reviewl)) {
       reviewl[[prof]]$courses[[cur_course]][[cur_section]][["average"]] <-
         average
       
-      cur_course_name <- names(reviewl[[prof]]$courses[cur_course])
+      cur_course_title <- names(reviewl[[prof]]$courses[cur_course])
       
       cur_course_size <- course_sizes[[cur_course_code]]
       
@@ -184,9 +202,8 @@ for (prof in 1:length(reviewl)) {
       
       line <-
         c(
-          prof_name,
           cur_course_code,
-          cur_course_name,
+          cur_course_title,
           reviewl[[prof]]$courses[[cur_course]][[cur_section]][["response_rate"]],
           num_responses,
           cur_course_size,
@@ -196,10 +213,9 @@ for (prof in 1:length(reviewl)) {
       prof_report <- rbind(prof_report, line)
     }
   }
-  
-  colnames(target) <-
+    
+  colnames(prof_report) <-
     c(
-      "Name",
       "Course Code",
       "Course Title",
       "Response Rate",
@@ -212,10 +228,12 @@ for (prof in 1:length(reviewl)) {
       "Fair",
       "Poor"
     )
+  rownames(prof_report) <- NULL
   prof_name <- gsub(" ", "_", prof_name)
   PROF_REPORT_NAME <- paste(prof_name, ".csv", sep = "")
-  write.table(target,
+  write.table(prof_report,
               PROF_REPORT_NAME,
               sep = ",",
-              row.names = FALSE)
+              row.names= FALSE)
 }
+

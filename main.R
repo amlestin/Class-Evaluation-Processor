@@ -144,7 +144,8 @@ for (i in 1:nrow(similar)) {
 write.table(similar,
             "merged-names.txt",
             col.names = FALSE,
-            row.names = FALSE)
+            row.names = FALSE,
+            quote=FALSE)
 
 # Outputs a report in the format [Professor's name].csv in Course Code, Course Title, Reponse Rate, Num Evals, Course Size, Average, Frequencies format
 # for each professor in reviewl

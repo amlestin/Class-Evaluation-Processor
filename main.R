@@ -151,12 +151,16 @@ write.table(
 
 # Outputs a report in the format [Professor's name].csv in Course Code, Course Title, Reponse Rate, Num Evals, Course Size, Average, Frequencies format
 # for each professor in reviewl
-
+summary.report <- list()
 for (prof in 1:length(reviewl)) {
   num.courses <- length(reviewl[[prof]]$courses)
   prof.name <- names(reviewl[prof])
   
   prof.report <- c()
+  summary.ratings.prod <- c()
+  summary.num.ratings <- c()
+  summary.course.names <- names(reviewl[[prof]]$courses)
+  
   for (cur.course in 1:num.courses) {
     num.sections <- length(reviewl[[prof]]$courses[[cur.course]])
     
@@ -185,13 +189,17 @@ for (prof in 1:length(reviewl)) {
         freqs
       
       # sum of all ratings, i.e., number of ratings the professor received
-      num.responses <- sum(freqs)
+      num.ratings <- sum(freqs)
       
       # calculates a weighted average
-      average <-
-        (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount) / num.responses
+      ratings.prod <-
+        (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount)
+      
       reviewl[[prof]]$courses[[cur.course]][[cur.section]][["average"]] <-
-        average
+        ratings.prod / num.ratings
+      
+      summary.ratings.prod <- c(summary.ratings.prod, ratings.prod)
+      summary.num.ratings <- c(summary.num.ratings, num.ratings)
       
       cur.course.title <- names(reviewl[[prof]]$courses[cur.course])
       
@@ -201,14 +209,14 @@ for (prof in 1:length(reviewl)) {
       # use the scales package to represent response rate as a percent
       library(scales)
       reviewl[[prof]]$courses[[cur.course]][[cur.section]][["response.rate"]] <-
-        percent(num.responses / cur.course.size)
+        percent(num.ratings / cur.course.size)
       
       line <-
         c(
           cur.course.code,
           cur.course.title,
           reviewl[[prof]]$courses[[cur.course]][[cur.section]][["response.rate"]],
-          num.responses,
+          num.ratings,
           cur.course.size,
           reviewl[[prof]]$courses[[cur.course]][[cur.section]][["average"]],
           reviewl[[prof]]$courses[[cur.course]][[cur.section]][["freqs"]]
@@ -232,13 +240,50 @@ for (prof in 1:length(reviewl)) {
       "Poor"
     )
   rownames(prof.report) <- NULL
-  prof.name <- gsub(" ", ".", prof.name)
-  PROF.REPORT.NAME <- paste(prof.name, ".csv", sep = "")
+  prof.name.formatted <- gsub(" ", ".", prof.name)
+  prof.report.name <- paste(prof.name.formatted, ".csv", sep = "")
   write.table(prof.report,
-              PROF.REPORT.NAME,
+              prof.report.name,
               sep = ",",
               row.names = FALSE)
+  
+  summary.ratings.prod <- sum(summary.ratings.prod)
+  summary.num.ratings <- sum(summary.num.ratings)
+  
+  summary.average <- summary.ratings.prod / summary.num.ratings
+  summary.line <-
+    c(prof.name, summary.average, summary.course.names)
+  summary.line.length <- length(summary.line)
+  summary.report.ncol <- ncol(summary.report)
+  
+  if (is.null(summary.report.ncol) == FALSE) {
+    if (summary.line.length < summary.ncol)
+    {
+      summary.line <-
+        c(summary.line,
+          rep(NA, summary.report.ncol - summary.line.length))
+    }
+    print(summary.line)
+  }
+  
+  summary.report <- c(summary.report, list(summary.line))
 }
+
+max.ncol <-  max(sapply(summary.report, length))
+summary.report <- do.call(rbind, lapply(summary.report, function(z)
+  c(z, rep(
+    NA, max.ncol - length(z)
+  ))))
+
+colnames(summary.report)[1] <- "Name"
+colnames(summary.report)[2] <- "Average Evaluation"
+colnames(summary.report)[3:max.ncol] <-
+  paste("C", (1:(max.ncol - 2)), sep = "")
+
+write.table(summary.report,
+            "@Report.csv",
+            sep = ",",
+            row.names = FALSE)
 
 winDialog(type = c("ok"),
           "Your reports have been generated in the program directory.")

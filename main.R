@@ -2,12 +2,21 @@
 # Purpose: Extracts data from a Qualtrics survey evaluation CSV export file and outputs a Report.csv file with average reviews per professor
 
 # opens a window to select the input file
-INPUT_FILENAME <- file.choose()
+winDialog(type = c("ok"),
+          "Select the report file you exported from Qualtrics after the evaluation.")
+EXPORTED_FILENAME <- file.choose()
 
-# reads the csv file in ("FILENAME.csv")
-d <- read.csv(INPUT_FILENAME)
+d <- read.csv(EXPORTED_FILENAME)
 
-# vector of character representation of all professor names used in the file
+winDialog(
+  type = c("ok"),
+  "Select the contacts file you imported into Qualtrics before the evaluation."
+)
+CONTACTS_FILENAME <- file.choose()
+
+c <- read.csv(CONTACTS_FILENAME)
+
+# vector of character representations of all professor names used in the file
 contacts <- c(
   # [-c(1:2)] removes the headers from each column
   # as.character converts from levels (integer) representations to names (character)
@@ -29,12 +38,10 @@ contacts <- c(
   as.character(d$P16[-c(1:2)])
 )
 
-# remove empty contacts (not all classes have 16 all professors)
+# remove empty contacts (not all classes have all 16 professor slots filled)
 contacts <- contacts[-(which(contacts == ""))]
 # remove duplicates
 contacts <- unique(contacts)
-
-
 
 # Gets all reviews for each professor in contacts and adds them to reviewl
 reviewl <- list()
@@ -62,13 +69,16 @@ for (cur_eval in 3:nrow(d)) {
     course_number <- as.character(d[cur_eval, "Course.Number"])
     sequence_number <- as.character(d[cur_eval, "Sequence.Number"])
     
-    course_code <- paste(subject_code, course_number, sequence_number, sep=".")
-
+    course_code <-
+      paste(subject_code, course_number, sequence_number, sep = ".")
+    
     if (prof_name != "") {
       # some respondents skip questions
       if (review != "") {
         # reviewl[[prof]]$courses[[course_title]]$ratings <- c(reviewl[[prof]]$courses[[course_title]]$ratings, review)
-        reviewl[[prof_name]]$courses[[course_title]][[course_code]]$ratings <- c(reviewl[[prof_name]]$courses[[course_title]][[course_code]]$rating, review);
+        reviewl[[prof_name]]$courses[[course_title]][[course_code]]$ratings <-
+          c(reviewl[[prof_name]]$courses[[course_title]][[course_code]]$rating, review)
+        
       }
     }
   }
@@ -112,34 +122,28 @@ for (i in 1:nrow(similar)) {
   reviewl[[sname]] <- NULL
 }
 
-profnames <- names(reviewl)
-# makes reviewl easier to iterate over
-reviewl <- lapply(reviewl, unlist)
-# find the most number of reviews any professor received
-max <- max(sapply(reviewl, length))
-
-# pads the reviewl list with NA values until all professors have max reviews
-
-reviewl <-
-  do.call(rbind, lapply(reviewl, function(z)
-    c(z, rep(NA, max - length(
-      z
-    )))))
-
+# outputs text log so the user can check no names were merged unnecessarily
+write.table(similar,
+            "merged-names.txt",
+            col.names = FALSE,
+            row.names = FALSE)
 
 # Outputs a report in the format [Professor's name].csv in Name, Course Code + Section, Average, Frequencies format
 # for each professor in reviewl
 
 for (prof in 1:length(reviewl)) {
   num_courses <- length(reviewl[[prof]]$courses)
-  prof_name <- names(reviewl[prof]) 
+  prof_name <- names(reviewl[prof])
   
-  target <- c()
+  prof_report <- c()
   for (cur_course in 1:num_courses) {
     num_sections <- length(reviewl[[prof]]$courses[[cur_course]])
     
-      for (cur_section in 1:num_section) {
-      reviews <- reviewl[[prof]]$courses[[cur_course]][[cur_section]]$ratings
+    for (cur_section in 1:num_sections) {
+      reviews <-
+        reviewl[[prof]]$courses[[cur_course]][[cur_section]]$ratings
+      cur_course_code <-
+        names(reviewl[[prof]]$courses[[cur_course]][cur_section])
       
       # number of "Excellent" reviews in row
       ecount <- length(which(reviews == "Excellent"))
@@ -156,60 +160,62 @@ for (prof in 1:length(reviewl)) {
       freqs <- c(ecount, vgcount, gcount, fcount, pcount)
       #names(freqs) <- c("Excellent", "Very Good", "Good", "Fair", "Poor")
       
-      reviewl[[prof]]$courses[[cur_course]][[cur_section]][["freqs"]] <- freqs
+      reviewl[[prof]]$courses[[cur_course]][[cur_section]][["freqs"]] <-
+        freqs
       
       # sum of all ratings, i.e., number of ratings the professor received
-      sum <- sum(freqs)
+      num_responses <- sum(freqs)
       
       # calculates a weighted average
       average <-
-        (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount) / sum
-      reviewl[[prof]]$courses[[cur_course]][["average"]] <- average
+        (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount) / num_responses
+      reviewl[[prof]]$courses[[cur_course]][[cur_section]][["average"]] <-
+        average
       
       cur_course_name <- names(reviewl[[prof]]$courses[cur_course])
-      reviewl[[prof]]$courses[[cur_course]][["response_rate"]] <- sum/course_sizes[[cur_course_name]]
       
-      line <- c(prof_name, cur_course_name, reviewl[[prof]]$courses[[cur_course]][["response_rate"]], reviewl[[prof]]$courses[[cur_course]][["average"]], reviewl[[prof]]$courses[[cur_course]][["freqs"]])
-      target <- rbind(target, line)
+      cur_course_size <- course_sizes[[cur_course_code]]
+      
+      
+      # use the scales package to represent response rate as a percent
+      library(scales)
+      reviewl[[prof]]$courses[[cur_course]][[cur_section]][["response_rate"]] <-
+        percent(num_responses / cur_course_size)
+      
+      line <-
+        c(
+          prof_name,
+          cur_course_code,
+          cur_course_name,
+          reviewl[[prof]]$courses[[cur_course]][[cur_section]][["response_rate"]],
+          num_responses,
+          cur_course_size,
+          reviewl[[prof]]$courses[[cur_course]][[cur_section]][["average"]],
+          reviewl[[prof]]$courses[[cur_course]][[cur_section]][["freqs"]]
+        )
+      prof_report <- rbind(prof_report, line)
     }
   }
-  colnames(target) <- c("Name", "Course Title", "Response Rate", "Average Eval", "Excellent", "Very Good", "Good", "Fair", "Poor")
+  
+  colnames(target) <-
+    c(
+      "Name",
+      "Course Code",
+      "Course Title",
+      "Response Rate",
+      "Number of Evals",
+      "Course Size",
+      "Average Eval",
+      "Excellent",
+      "Very Good",
+      "Good",
+      "Fair",
+      "Poor"
+    )
   prof_name <- gsub(" ", "_", prof_name)
-  PROF_REPORT_NAME <- paste(prof_name, ".csv", sep="")
+  PROF_REPORT_NAME <- paste(prof_name, ".csv", sep = "")
   write.table(target,
-                PROF_REPORT_NAME,
-                sep = ",",
-                row.names = FALSE)
+              PROF_REPORT_NAME,
+              sep = ",",
+              row.names = FALSE)
 }
-
-
-
-# column labels for the Counts variables
-ratings <- c("Excellent", "Very Good", "Good", "Fair", "Poor")
-
-
-colnames(out)[1] = "Professor"
-colnames(out)[2] = "Average"
-colnames(out)[3:7] = ratings
-
-# there is an arbitrary number of other columns representing the number of reviews each professor got
-# ncol(out) is eqaul to the max number of reviews a professor received
-# delete 7 to make the lengths equal
-colnames(out)[8:ncol(out)] = 1:(ncol(out) - 7)
-
-
-write.table(similar,
-            "merged-names.txt",
-            col.names = FALSE,
-            row.names = FALSE)
-
-# output a csv file
-# do not include the table's row.names column
-INPUT_FILENAME <- sub('\\..*$', '', basename(INPUT_FILENAME))
-
-OUTPUT_FILENAME <-
-  paste("Report-", INPUT_FILENAME, ".csv", sep = "")
-write.table(out,
-            OUTPUT_FILENAME,
-            sep = ",",
-            row.names = FALSE)

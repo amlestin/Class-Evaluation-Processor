@@ -238,3 +238,7 @@ for (prof in 1:length(reviewl)) {
               row.names= FALSE)
 }
 
+winDialog(
+  type = c("ok"),
+  "Your reports have been generated in the program directory."
+)

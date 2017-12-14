@@ -269,6 +269,7 @@ for (prof in 1:length(reviewl)) {
   summary.report <- c(summary.report, list(summary.line))
 }
 
+# adds NA to each "row" of summary.report so a square table can be created
 max.ncol <-  max(sapply(summary.report, length))
 summary.report <- do.call(rbind, lapply(summary.report, function(z)
   c(z, rep(
@@ -280,6 +281,7 @@ colnames(summary.report)[2] <- "Average Evaluation"
 colnames(summary.report)[3:max.ncol] <-
   paste("C", (1:(max.ncol - 2)), sep = "")
 
+# @ symbol used to ensure the report is listed first in the directory
 write.table(summary.report,
             "@Report.csv",
             sep = ",",

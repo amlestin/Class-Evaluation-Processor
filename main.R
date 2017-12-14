@@ -276,10 +276,11 @@ summary.report <- do.call(rbind, lapply(summary.report, function(z)
     NA, max.ncol - length(z)
   ))))
 
-colnames(summary.report)[1] <- "Name"
-colnames(summary.report)[2] <- "Average Evaluation"
-colnames(summary.report)[3:max.ncol] <-
-  paste("C", (1:(max.ncol - 2)), sep = "")
+col1.name <- "Name"
+col2.name <- "Average Evaluation"
+col3.name <- paste("C", (1:(max.ncol - 2)), sep = "")
+
+colnames(summary.report) <- c(col1.name, col2.name, col3.name)
 
 # @ symbol used to ensure the report is listed first in the directory
 write.table(summary.report,

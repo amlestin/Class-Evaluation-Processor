@@ -293,10 +293,13 @@ col3.name <- paste("C", (1:(max.ncol - 2)), sep = "")
 colnames(summary.report) <- c(col1.name, col2.name, col3.name)
 
 # @ symbol used to ensure the report is listed first in the directory
-write.table(summary.report,
-            "@Report.csv",
-            sep = ",",
-            row.names = FALSE)
+write.table(
+  summary.report,
+  "@Report.csv",
+  sep = ",",
+  row.names = FALSE,
+  na = ""
+)
 
 winDialog(type = c("ok"),
           "Your reports have been generated in the program directory.")

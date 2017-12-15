@@ -6,14 +6,13 @@ winDialog(type = c("ok"),
           "Select the report file you exported from Qualtrics after the evaluation.")
 evaluations.filename <- file.choose()
 
-evaluations <- read.csv(evaluations.filename)
-
 winDialog(
   type = c("ok"),
   "Select the contacts file you imported into Qualtrics before the evaluation."
 )
 student.contacts.filename <- file.choose()
 
+evaluations <- read.csv(evaluations.filename)
 student.contacts <- read.csv(student.contacts.filename)
 
 all.codes <- c()

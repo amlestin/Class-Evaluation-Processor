@@ -100,6 +100,17 @@ for (cur.eval in 3:nrow(d)) {
       }
     }
   }
+  
+  eval.comment <- as.character(d[cur.eval, "Q22"])
+  
+  comment.file.name <-
+    paste(paste(course.code, sep = " "), ".txt", sep = "")
+  
+  if (eval.comment != "") {
+    write("Comment: ", file = comment.file.name, append = TRUE)
+    write(eval.comment, file = comment.file.name, append = TRUE)
+    write("\n\n", file = comment.file.name, append = TRUE)
+  }
 }
 
 

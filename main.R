@@ -12,7 +12,7 @@ winDialog(
 )
 student.contacts.filename <- file.choose()
 
-evaluations <- read.csv(evaluations.filename)
+d <- read.csv(evaluations.filename)
 student.contacts <- read.csv(student.contacts.filename)
 
 all.codes <- c()
@@ -130,7 +130,7 @@ for (i in 1:length(contacts)) {
         (contacts[i] != contacts[j])) {
       if ((length(which(similar == contacts[i])) == 0) &
           (length(which(similar == contacts[j])) == 0)) {
-        similar <- rbind(similar, c(contacts[i], contacts[j]))
+        similar <- rbind(similar, c(contacts[i], ">", contacts[j]))
         
         
       }

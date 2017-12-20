@@ -12,6 +12,7 @@ winDialog(
 )
 student.contacts.filename <- file.choose()
 
+library(scales)
 evals <- read.csv(evaluations.filename)
 student.contacts <- read.csv(student.contacts.filename)
 
@@ -222,7 +223,6 @@ for (prof in 1:length(reviewl)) {
       
       
       # use the scales package to represent response rate as a percent
-      library(scales)
       reviewl[[prof]]$courses[[cur.course]][[cur.section]][["response.rate"]] <-
         percent(num.ratings / cur.course.size)
       

@@ -106,9 +106,8 @@ for (cur.eval in 3:nrow(d)) {
     paste(paste(course.code, sep = " "), ".txt", sep = "")
   
   if (eval.comment != "") {
-    write("Comment: ", file = comment.file.name, append = TRUE)
-    write(eval.comment, file = comment.file.name, append = TRUE)
-    write("\n\n", file = comment.file.name, append = TRUE)
+    output <- paste("Comment: ", eval.comment, "\n\n");
+    write(output, file = comment.file.name, append = TRUE)
   }
 }
 

@@ -12,7 +12,7 @@ winDialog(
 )
 student.contacts.filename <- file.choose()
 
-d <- read.csv(evaluations.filename)
+evals <- read.csv(evaluations.filename)
 student.contacts <- read.csv(student.contacts.filename)
 
 all.codes <- c()
@@ -37,22 +37,22 @@ for (code in 1:length(unique.codes)) {
 contacts <- c(
   # [-c(1:2)] removes the headers from each column
   # as.character converts from levels (integer) representations to names (character)
-  as.character(d$P1[-c(1:2)]),
-  as.character(d$P2[-c(1:2)]),
-  as.character(d$P3[-c(1:2)]),
-  as.character(d$P4[-c(1:2)]),
-  as.character(d$P5[-c(1:2)]),
-  as.character(d$P6[-c(1:2)]),
-  as.character(d$P7[-c(1:2)]),
-  as.character(d$P8[-c(1:2)]),
-  as.character(d$P9[-c(1:2)]),
-  as.character(d$P10[-c(1:2)]),
-  as.character(d$P11[-c(1:2)]),
-  as.character(d$P12[-c(1:2)]),
-  as.character(d$P13[-c(1:2)]),
-  as.character(d$P14[-c(1:2)]),
-  as.character(d$P15[-c(1:2)]),
-  as.character(d$P16[-c(1:2)])
+  as.character(evals$P1[-c(1:2)]),
+  as.character(evals$P2[-c(1:2)]),
+  as.character(evals$P3[-c(1:2)]),
+  as.character(evals$P4[-c(1:2)]),
+  as.character(evals$P5[-c(1:2)]),
+  as.character(evals$P6[-c(1:2)]),
+  as.character(evals$P7[-c(1:2)]),
+  as.character(evals$P8[-c(1:2)]),
+  as.character(evals$P9[-c(1:2)]),
+  as.character(evals$P10[-c(1:2)]),
+  as.character(evals$P11[-c(1:2)]),
+  as.character(evals$P12[-c(1:2)]),
+  as.character(evals$P13[-c(1:2)]),
+  as.character(evals$P14[-c(1:2)]),
+  as.character(evals$P15[-c(1:2)]),
+  as.character(evals$P16[-c(1:2)])
 )
 
 # remove empty contacts (not all classes have all 16 professor slots filled)
@@ -63,7 +63,7 @@ contacts <- unique(contacts)
 # Gets all reviews for each professor in contacts and adds them to reviewl
 reviewl <- list()
 comment.files <- list()
-for (cur.eval in 3:nrow(d)) {
+for (cur.eval in 3:nrow(evals)) {
   # for each P column, e.g, P1
   for (pctr in 1:16) {
     # convert the P number to a character
@@ -76,16 +76,17 @@ for (cur.eval in 3:nrow(d)) {
     qcol <- paste("Q", qctr.char, sep = "")
     
     # the question answer/review is the value at qcol
-    review <- d[cur.eval, qcol]
+    review <- evals[cur.eval, qcol]
     # level (integer) to character
     review <- as.character(review)
     
-    prof.name <- as.character(d[cur.eval, pcol])
+    prof.name <- as.character(evals[cur.eval, pcol])
     # save the current eval's course title into a variable
-    course.title <- as.character(d[cur.eval, "Course.Title"])
-    subject.code <- as.character(d[cur.eval, "Subject.Code"])
-    course.number <- as.character(d[cur.eval, "Course.Number"])
-    sequence.number <- as.character(d[cur.eval, "Sequence.Number"])
+    course.title <- as.character(evals[cur.eval, "Course.Title"])
+    subject.code <- as.character(evals[cur.eval, "Subject.Code"])
+    course.number <- as.character(evals[cur.eval, "Course.Number"])
+    sequence.number <-
+      as.character(evals[cur.eval, "Sequence.Number"])
     
     course.code <-
       paste(subject.code, course.number, sequence.number, sep = ".")
@@ -93,7 +94,6 @@ for (cur.eval in 3:nrow(d)) {
     if (prof.name != "") {
       # some respondents skip questions
       if (review != "") {
-        # reviewl[[prof]]$courses[[course.title]]$ratings <- c(reviewl[[prof]]$courses[[course.title]]$ratings, review)
         reviewl[[prof.name]]$courses[[course.title]][[course.code]]$ratings <-
           c(reviewl[[prof.name]]$courses[[course.title]][[course.code]]$rating, review)
         
@@ -101,14 +101,15 @@ for (cur.eval in 3:nrow(d)) {
     }
   }
   
-  eval.comment <- as.character(d[cur.eval, "Q22"])
+  eval.comment <- as.character(evals[cur.eval, "Q22"])
   
   comment.file.name <-
     paste(paste(course.code, sep = " "), ".txt", sep = "")
   
   if (eval.comment != "") {
     comment.block <- paste("Comment: ", eval.comment, "\n\n")
-    comment.files[[comment.file.name]] <- c(comment.files[[comment.file.name]], comment.block)
+    comment.files[[comment.file.name]] <-
+      c(comment.files[[comment.file.name]], comment.block)
   }
 }
 
@@ -145,7 +146,7 @@ for (i in 1:length(contacts)) {
 for (i in 1:nrow(similar)) {
   fname <- similar[i, 1]
   
-  sname <- similar[i, 2]
+  sname <- similar[i, 3]
   
   reviewl[[fname]]$courses <-
     c(reviewl[[fname]]$courses, reviewl[[sname]]$courses)

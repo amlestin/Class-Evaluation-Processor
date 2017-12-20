@@ -62,6 +62,7 @@ contacts <- unique(contacts)
 
 # Gets all reviews for each professor in contacts and adds them to reviewl
 reviewl <- list()
+comment.files <- list()
 for (cur.eval in 3:nrow(d)) {
   # for each P column, e.g, P1
   for (pctr in 1:16) {
@@ -106,11 +107,15 @@ for (cur.eval in 3:nrow(d)) {
     paste(paste(course.code, sep = " "), ".txt", sep = "")
   
   if (eval.comment != "") {
-    output <- paste("Comment: ", eval.comment, "\n\n");
-    write(output, file = comment.file.name, append = TRUE)
+    comment.block <- paste("Comment: ", eval.comment, "\n\n")
+    comment.files[[comment.file.name]] <- c(comment.files[[comment.file.name]], comment.block)
   }
 }
 
+for (cur.file in 1:length(names(comment.files))) {
+  cur.file.name <- names(comment.files[cur.file])
+  write(comment.files[[cur.file.name]], file = cur.file.name)
+}
 
 similar <- c()
 max.name.diff <- 4

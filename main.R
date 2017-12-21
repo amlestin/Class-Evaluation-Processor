@@ -63,6 +63,7 @@ contacts <- unique(contacts)
 
 # Gets all reviews for each professor in contacts and adds them to reviewl
 reviewl <- list()
+tal <- list()
 comment.files <- list()
 for (cur.eval in 3:nrow(evals)) {
   # for each P column, e.g, P1
@@ -98,6 +99,24 @@ for (cur.eval in 3:nrow(evals)) {
         reviewl[[prof.name]]$courses[[course.title]][[course.code]]$ratings <-
           c(reviewl[[prof.name]]$courses[[course.title]][[course.code]]$rating, review)
         
+      }
+    }
+  }
+  
+  for (ta.ctr in 1:3) {
+    ta.ctr.char <- as.character(ta.ctr)
+    ta.review.col.char <- as.character(ta.ctr + 17)
+    
+    ta.col <- paste("TA", ta.ctr.char, sep = "")
+    ta.review.col <- paste("Q", ta.review.col.char, sep = "")
+    
+    ta.name <- as.character(evals[cur.eval, ta.col])
+    ta.review <- as.character(evals[cur.eval, ta.review.col])
+    
+    if (ta.name != "") {
+      if (ta.review != "") {
+        reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings <-
+          c(reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings,  ta.review)
       }
     }
   }

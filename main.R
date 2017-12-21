@@ -63,7 +63,6 @@ contacts <- unique(contacts)
 
 # Gets all reviews for each professor in contacts and adds them to reviewl
 reviewl <- list()
-tal <- list()
 comment.files <- list()
 for (cur.eval in 3:nrow(evals)) {
   # for each P column, e.g, P1

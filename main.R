@@ -13,15 +13,15 @@ winDialog(
 student.contacts.filename <- file.choose()
 
 #install.packages("scales")
-library(scales)
+library("scales")
 evals <- read.csv(evaluations.filename)
 student.contacts <- read.csv(student.contacts.filename)
 
 all.codes <- c()
 for (i in 1:nrow(student.contacts)) {
-  s.code <- as.character(student.contacts[i, "Subject.Code"])
-  c.num <- as.character(student.contacts[i, "Course.Number"])
-  s.num <- as.character(student.contacts[i, "Sequence.Number"])
+  s.code <- as.character(student.contacts[i, "SUBJECT.CODE"])
+  c.num <- as.character(student.contacts[i, "COURSE.."])
+  s.num <- as.character(student.contacts[i, "SECTION.."])
   
   code <- paste(s.code, c.num, s.num, sep = ".")
   all.codes <- c(all.codes, code)
@@ -39,22 +39,22 @@ for (code in 1:length(unique.codes)) {
 contacts <- c(
   # [-c(1:2)] removes the headers from each column
   # as.character converts from levels (integer) representations to names (character)
-  as.character(evals$P1[-c(1:2)]),
-  as.character(evals$P2[-c(1:2)]),
-  as.character(evals$P3[-c(1:2)]),
-  as.character(evals$P4[-c(1:2)]),
-  as.character(evals$P5[-c(1:2)]),
-  as.character(evals$P6[-c(1:2)]),
-  as.character(evals$P7[-c(1:2)]),
-  as.character(evals$P8[-c(1:2)]),
-  as.character(evals$P9[-c(1:2)]),
-  as.character(evals$P10[-c(1:2)]),
-  as.character(evals$P11[-c(1:2)]),
-  as.character(evals$P12[-c(1:2)]),
-  as.character(evals$P13[-c(1:2)]),
-  as.character(evals$P14[-c(1:2)]),
-  as.character(evals$P15[-c(1:2)]),
-  as.character(evals$P16[-c(1:2)])
+  as.character(evals$PROF1[-c(1:2)]),
+  as.character(evals$PROF2[-c(1:2)]),
+  as.character(evals$PROF3[-c(1:2)]),
+  as.character(evals$PROF4[-c(1:2)]),
+  as.character(evals$PROF5[-c(1:2)]),
+  as.character(evals$PROF6[-c(1:2)]),
+  as.character(evals$PROF7[-c(1:2)]),
+  as.character(evals$PROF8[-c(1:2)]),
+  as.character(evals$PROF9[-c(1:2)]),
+  as.character(evals$PROF10[-c(1:2)]),
+  as.character(evals$PROF11[-c(1:2)]),
+  as.character(evals$PROF12[-c(1:2)]),
+  as.character(evals$PROF13[-c(1:2)]),
+  as.character(evals$PROF14[-c(1:2)]),
+  as.character(evals$PROF15[-c(1:2)]),
+  as.character(evals$PROF16[-c(1:2)])
 )
 
 # remove empty contacts (not all classes have all 16 professor slots filled)
@@ -71,7 +71,7 @@ for (cur.eval in 3:nrow(evals)) {
     # convert the P number to a character
     pctr.char <- as.character(pctr)
     # combine the character and number to have a valid column index, e.g., "P1"
-    pcol <-  paste("P", pctr.char, sep = "")
+    pcol <-  paste("PROF", pctr.char, sep = "")
     
     # add one to the pctr because Q3 corresponds to P1's review
     qctr.char <- as.character(pctr + 1)
@@ -84,42 +84,46 @@ for (cur.eval in 3:nrow(evals)) {
     
     prof.name <- as.character(evals[cur.eval, pcol])
     # save the current eval's course title into a variable
-    course.title <- as.character(evals[cur.eval, "Course.Title"])
-    subject.code <- as.character(evals[cur.eval, "Subject.Code"])
-    course.number <- as.character(evals[cur.eval, "Course.Number"])
+    course.title <- as.character(evals[cur.eval, "TITLE"])
+    subject.code <- as.character(evals[cur.eval, "SUBJECT.CODE"])
+    course.number <- as.character(evals[cur.eval, "COURSE.."])
     sequence.number <-
-      as.character(evals[cur.eval, "Sequence.Number"])
+      as.character(evals[cur.eval, "SECTION.."])
     
     course.code <-
       paste(subject.code, course.number, sequence.number, sep = ".")
+    
+    # FIXME
+    if(length(prof.name) == 0)
+      next;
     
     if (prof.name != "") {
       # some respondents skip questions
       if (review != "") {
         reviewl[[prof.name]]$courses[[course.title]][[course.code]]$ratings <-
-          c(reviewl[[prof.name]]$courses[[course.title]][[course.code]]$rating, review)
+          c(reviewl[[prof.name]]$courses[[course.title]][[course.code]]$ratings, review)
         
       }
     }
   }
   
-  for (ta.ctr in 1:3) {
-    ta.ctr.char <- as.character(ta.ctr)
-    ta.review.col.char <- as.character(ta.ctr + 17)
-    
-    ta.col <- paste("TA", ta.ctr.char, sep = "")
-    ta.review.col <- paste("Q", ta.review.col.char, sep = "")
-    
-    ta.name <- as.character(evals[cur.eval, ta.col])
-    ta.review <- as.character(evals[cur.eval, ta.review.col])
-    
-    if (ta.name != "") {
-      if (ta.review != "") {
-        reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings <-
-          c(reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings,  ta.review)
-      }
-    }
-  }
+  # for (ta.ctr in 1:3) {
+  #   ta.ctr.char <- as.character(ta.ctr)
+  #   ta.review.col.char <- as.character(ta.ctr + 17)
+  #   
+  #   ta.col <- paste("TA", ta.ctr.char, sep = "")
+  #   ta.review.col <- paste("Q", ta.review.col.char, sep = "")
+  #   
+  #   ta.name <- as.character(evals[cur.eval, ta.col])
+  #   ta.review <- as.character(evals[cur.eval, ta.review.col])
+  #   
+  #   if (ta.name != "") {
+  #     if (ta.review != "") {
+  #       reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings <-
+  #         c(reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings,  ta.review)
+  #     }
+  #   }
+  # }
   
   eval.comment <- as.character(evals[cur.eval, "Q22"])
   
@@ -163,6 +167,9 @@ for (i in 1:length(contacts)) {
   }
 }
 
+# FIXME if similar == 0
+
+if (length(similar) != 0) {
 for (i in 1:nrow(similar)) {
   fname <- similar[i, 1]
   
@@ -183,7 +190,7 @@ write.table(
   row.names = FALSE,
   quote = FALSE
 )
-
+}
 # Outputs a report in the format [Professor's name].csv in Course Code, Course Title, Reponse Rate, Num Evals, Course Size, Average, Frequencies format
 # for each professor in reviewl
 summary.report <- list()
@@ -274,7 +281,10 @@ for (prof in 1:length(reviewl)) {
       "Poor"
     )
   rownames(prof.report) <- NULL
-  prof.name.formatted <- gsub(" ", ".", prof.name)
+  
+  prof.name.formatted <- gsub(",", ".", prof.name)
+  prof.name.formatted <- gsub(" ", "", prof.name.formatted)
+  
   prof.report.name <- paste(prof.name.formatted, ".csv", sep = "")
   write.table(prof.report,
               prof.report.name,

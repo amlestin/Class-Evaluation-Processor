@@ -12,6 +12,7 @@ winDialog(
 )
 student.contacts.filename <- file.choose()
 
+#install.packages("scales")
 library(scales)
 evals <- read.csv(evaluations.filename)
 student.contacts <- read.csv(student.contacts.filename)

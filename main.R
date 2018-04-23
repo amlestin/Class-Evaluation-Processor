@@ -19,9 +19,9 @@ student.contacts <- read.csv(student.contacts.filename)
 
 all.codes <- c()
 for (i in 1:nrow(student.contacts)) {
-  s.code <- as.character(student.contacts[i, "Subject.Code"])
-  c.num <- as.character(student.contacts[i, "Course.Number"])
-  s.num <- as.character(student.contacts[i, "Sequence.Number"])
+  s.code <- as.character(student.contacts[i, "SUBJECT.CODE"])
+  c.num <- as.character(student.contacts[i, "COURSE.."])
+  s.num <- as.character(student.contacts[i, "SECTION.."])
   
   code <- paste(s.code, c.num, s.num, sep = ".")
   all.codes <- c(all.codes, code)
@@ -39,22 +39,22 @@ for (code in 1:length(unique.codes)) {
 contacts <- c(
   # [-c(1:2)] removes the headers from each column
   # as.character converts from levels (integer) representations to names (character)
-  as.character(evals$P1[-c(1:2)]),
-  as.character(evals$P2[-c(1:2)]),
-  as.character(evals$P3[-c(1:2)]),
-  as.character(evals$P4[-c(1:2)]),
-  as.character(evals$P5[-c(1:2)]),
-  as.character(evals$P6[-c(1:2)]),
-  as.character(evals$P7[-c(1:2)]),
-  as.character(evals$P8[-c(1:2)]),
-  as.character(evals$P9[-c(1:2)]),
-  as.character(evals$P10[-c(1:2)]),
-  as.character(evals$P11[-c(1:2)]),
-  as.character(evals$P12[-c(1:2)]),
-  as.character(evals$P13[-c(1:2)]),
-  as.character(evals$P14[-c(1:2)]),
-  as.character(evals$P15[-c(1:2)]),
-  as.character(evals$P16[-c(1:2)])
+  as.character(evals$PROF1[-c(1:2)]),
+  as.character(evals$POF2[-c(1:2)]),
+  as.character(evals$PROF3[-c(1:2)]),
+  as.character(evals$PROF4[-c(1:2)]),
+  as.character(evals$PROF5[-c(1:2)]),
+  as.character(evals$PROF6[-c(1:2)]),
+  as.character(evals$PROF7[-c(1:2)]),
+  as.character(evals$PROF8[-c(1:2)]),
+  as.character(evals$PROF9[-c(1:2)]),
+  as.character(evals$PROF10[-c(1:2)]),
+  as.character(evals$PROF11[-c(1:2)]),
+  as.character(evals$PROF12[-c(1:2)]),
+  as.character(evals$PROF13[-c(1:2)]),
+  as.character(evals$PROF14[-c(1:2)]),
+  as.character(evals$PROF15[-c(1:2)]),
+  as.character(evals$PROF16[-c(1:2)])
 )
 
 # remove empty contacts (not all classes have all 16 professor slots filled)
@@ -67,11 +67,11 @@ reviewl <- list()
 comment.files <- list()
 for (cur.eval in 3:nrow(evals)) {
   # for each P column, e.g, P1
-  for (pctr in 1:16) {
+  for (pctr in 1:15) {
     # convert the P number to a character
     pctr.char <- as.character(pctr)
     # combine the character and number to have a valid column index, e.g., "P1"
-    pcol <-  paste("P", pctr.char, sep = "")
+    pcol <-  paste("PROF", pctr.char, sep = "")
     
     # add one to the pctr because Q3 corresponds to P1's review
     qctr.char <- as.character(pctr + 1)
@@ -84,11 +84,11 @@ for (cur.eval in 3:nrow(evals)) {
     
     prof.name <- as.character(evals[cur.eval, pcol])
     # save the current eval's course title into a variable
-    course.title <- as.character(evals[cur.eval, "Course.Title"])
-    subject.code <- as.character(evals[cur.eval, "Subject.Code"])
-    course.number <- as.character(evals[cur.eval, "Course.Number"])
+    course.title <- as.character(evals[cur.eval, "TITLE"])
+    subject.code <- as.character(evals[cur.eval, "SUBJECT.CODE"])
+    course.number <- as.character(evals[cur.eval, "COURSE.."])
     sequence.number <-
-      as.character(evals[cur.eval, "Sequence.Number"])
+      as.character(evals[cur.eval, "SECTION.."])
     
     course.code <-
       paste(subject.code, course.number, sequence.number, sep = ".")

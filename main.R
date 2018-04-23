@@ -123,8 +123,9 @@ for (cur.eval in 3:nrow(evals)) {
   
   eval.comment <- as.character(evals[cur.eval, "Q22"])
   
+  alpha.course.title <- gsub("[[:punct:]]", ".", course.title)
   comment.file.name <-
-    paste(paste(course.code, sep = " "), ".txt", sep = "")
+    paste(paste(course.code, alpha.course.title, sep = "-"), ".txt", sep = "")
   
   if (eval.comment != "") {
     comment.block <- paste("Comment: ", eval.comment, "\n\n")

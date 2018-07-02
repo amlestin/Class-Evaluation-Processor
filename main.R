@@ -67,7 +67,7 @@ reviewl <- list()
 comment.files <- list()
 for (cur.eval in 3:nrow(evals)) {
   # for each P column, e.g, P1
-  for (pctr in 1:16) {
+  for (pctr in 1:15) {
     # convert the P number to a character
     pctr.char <- as.character(pctr)
     # combine the character and number to have a valid column index, e.g., "P1"
@@ -127,8 +127,9 @@ for (cur.eval in 3:nrow(evals)) {
   
   eval.comment <- as.character(evals[cur.eval, "Q22"])
   
+  alpha.course.title <- gsub("[[:punct:]]", ".", course.title)
   comment.file.name <-
-    paste(paste(course.code, sep = " "), ".txt", sep = "")
+    paste(paste(course.code, alpha.course.title, sep = "-"), ".txt", sep = "")
   
   if (eval.comment != "") {
     comment.block <- paste("Comment: ", eval.comment, "\n\n")

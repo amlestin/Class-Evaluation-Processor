@@ -13,7 +13,7 @@ winDialog(
 student.contacts.filename <- file.choose()
 
 #install.packages("scales")
-library(scales)
+library("scales")
 evals <- read.csv(evaluations.filename)
 student.contacts <- read.csv(student.contacts.filename)
 
@@ -40,7 +40,7 @@ contacts <- c(
   # [-c(1:2)] removes the headers from each column
   # as.character converts from levels (integer) representations to names (character)
   as.character(evals$PROF1[-c(1:2)]),
-  as.character(evals$POF2[-c(1:2)]),
+  as.character(evals$PROF2[-c(1:2)]),
   as.character(evals$PROF3[-c(1:2)]),
   as.character(evals$PROF4[-c(1:2)]),
   as.character(evals$PROF5[-c(1:2)]),
@@ -93,33 +93,37 @@ for (cur.eval in 3:nrow(evals)) {
     course.code <-
       paste(subject.code, course.number, sequence.number, sep = ".")
     
+    # FIXME
+    if(length(prof.name) == 0)
+      next;
+    
     if (prof.name != "") {
       # some respondents skip questions
       if (review != "") {
         reviewl[[prof.name]]$courses[[course.title]][[course.code]]$ratings <-
-          c(reviewl[[prof.name]]$courses[[course.title]][[course.code]]$rating, review)
+          c(reviewl[[prof.name]]$courses[[course.title]][[course.code]]$ratings, review)
         
       }
     }
   }
   
-  for (ta.ctr in 1:3) {
-    ta.ctr.char <- as.character(ta.ctr)
-    ta.review.col.char <- as.character(ta.ctr + 17)
-    
-    ta.col <- paste("TA", ta.ctr.char, sep = "")
-    ta.review.col <- paste("Q", ta.review.col.char, sep = "")
-    
-    ta.name <- as.character(evals[cur.eval, ta.col])
-    ta.review <- as.character(evals[cur.eval, ta.review.col])
-    
-    if (ta.name != "") {
-      if (ta.review != "") {
-        reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings <-
-          c(reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings,  ta.review)
-      }
-    }
-  }
+  # for (ta.ctr in 1:3) {
+  #   ta.ctr.char <- as.character(ta.ctr)
+  #   ta.review.col.char <- as.character(ta.ctr + 17)
+  #   
+  #   ta.col <- paste("TA", ta.ctr.char, sep = "")
+  #   ta.review.col <- paste("Q", ta.review.col.char, sep = "")
+  #   
+  #   ta.name <- as.character(evals[cur.eval, ta.col])
+  #   ta.review <- as.character(evals[cur.eval, ta.review.col])
+  #   
+  #   if (ta.name != "") {
+  #     if (ta.review != "") {
+  #       reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings <-
+  #         c(reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings,  ta.review)
+  #     }
+  #   }
+  # }
   
   eval.comment <- as.character(evals[cur.eval, "Q22"])
   
@@ -166,6 +170,9 @@ for (i in 1:length(contacts)) {
   }
 }
 
+# FIXME if similar == 0
+
+if (length(similar) != 0) {
 for (i in 1:nrow(similar)) {
   fname <- similar[i, 1]
   
@@ -186,7 +193,7 @@ write.table(
   row.names = FALSE,
   quote = FALSE
 )
-
+}
 # Outputs a report in the format [Professor's name].csv in Course Code, Course Title, Reponse Rate, Num Evals, Course Size, Average, Frequencies format
 # for each professor in reviewl
 summary.report <- list()
@@ -277,7 +284,10 @@ for (prof in 1:length(reviewl)) {
       "Poor"
     )
   rownames(prof.report) <- NULL
-  prof.name.formatted <- gsub(" ", ".", prof.name)
+  
+  prof.name.formatted <- gsub(",", ".", prof.name)
+  prof.name.formatted <- gsub(" ", "", prof.name.formatted)
+  
   prof.report.name <- paste(prof.name.formatted, ".csv", sep = "")
   write.table(prof.report,
               prof.report.name,

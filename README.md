@@ -34,5 +34,15 @@ The number of PROF and TA columns is arbitrary, but the setup above works for mo
 
 4. Place the survey results in the same folders as the main.R file.
 
-5. Drag the main.R file into an R session or run all of main.R in an IDE.
+5. If you do not have the package scales installed, uncomment the line
+
+
+``` 
+install.packages("scales")
+```
+
+
+
+
+6. Drag the main.R file into an R session or run all of main.R in an IDE.
 

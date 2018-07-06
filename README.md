@@ -26,7 +26,7 @@ Follow the following process to prepare a survey compatible with this tool:
   TA3
   TA4
   
-The number of PROF and TA columns is arbitrary, but the setup above works for most courses.
+    The number of PROF and TA columns is arbitrary, but the setup above works for most courses.
 
 2. Create question templates in Qualtrics to customize each question based on the embedded data in the contact record for each survey taker. This enable one survey template to be used for arbitrary course titles, semesters, names, etc. as are embedded for the survey taker's contact record or embedded in the unique link they clicked.
 

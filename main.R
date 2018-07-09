@@ -166,8 +166,6 @@ for (i in 1:length(contacts)) {
   }
 }
 
-# FIXME if similar == 0
-
 if (length(similar) != 0) {
 for (i in 1:nrow(similar)) {
   fname <- similar[i, 1]

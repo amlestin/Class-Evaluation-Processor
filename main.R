@@ -93,10 +93,6 @@ for (cur.eval in 3:nrow(evals)) {
     course.code <-
       paste(subject.code, course.number, sequence.number, sep = ".")
     
-    # FIXME
-    if(length(prof.name) == 0)
-      next;
-    
     if (prof.name != "") {
       # some respondents skip questions
       if (review != "") {

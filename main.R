@@ -283,6 +283,8 @@ for (prof in 1:length(reviewl)) {
   prof.name.formatted <- gsub(" ", "", prof.name.formatted)
   
   prof.report.name <- paste(prof.name.formatted, ".csv", sep = "")
+  
+  setwd("reports")
   write.table(prof.report,
               prof.report.name,
               sep = ",",

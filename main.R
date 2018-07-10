@@ -17,6 +17,8 @@ library("scales")
 evals <- read.csv(evaluations.filename)
 student.contacts <- read.csv(student.contacts.filename)
 
+setwd("./reports")
+
 all.codes <- c()
 for (i in 1:nrow(student.contacts)) {
   s.code <- as.character(student.contacts[i, "SUBJECT.CODE"])
@@ -106,13 +108,13 @@ for (cur.eval in 3:nrow(evals)) {
   # for (ta.ctr in 1:3) {
   #   ta.ctr.char <- as.character(ta.ctr)
   #   ta.review.col.char <- as.character(ta.ctr + 17)
-  #   
+  #
   #   ta.col <- paste("TA", ta.ctr.char, sep = "")
   #   ta.review.col <- paste("Q", ta.review.col.char, sep = "")
-  #   
+  #
   #   ta.name <- as.character(evals[cur.eval, ta.col])
   #   ta.review <- as.character(evals[cur.eval, ta.review.col])
-  #   
+  #
   #   if (ta.name != "") {
   #     if (ta.review != "") {
   #       reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings <-
@@ -167,26 +169,26 @@ for (i in 1:length(contacts)) {
 }
 
 if (length(similar) != 0) {
-for (i in 1:nrow(similar)) {
-  fname <- similar[i, 1]
+  for (i in 1:nrow(similar)) {
+    fname <- similar[i, 1]
+    
+    sname <- similar[i, 3]
+    
+    reviewl[[fname]]$courses <-
+      c(reviewl[[fname]]$courses, reviewl[[sname]]$courses)
+    reviewl[[fname]]$ratings <-
+      c(reviewl[[fname]]$ratings, reviewl[[sname]]$ratings)
+    reviewl[[sname]] <- NULL
+  }
   
-  sname <- similar[i, 3]
-  
-  reviewl[[fname]]$courses <-
-    c(reviewl[[fname]]$courses, reviewl[[sname]]$courses)
-  reviewl[[fname]]$ratings <-
-    c(reviewl[[fname]]$ratings, reviewl[[sname]]$ratings)
-  reviewl[[sname]] <- NULL
-}
-
-# outputs text log so the user can check no names were merged unnecessarily
-write.table(
-  similar,
-  "merged-names.txt",
-  col.names = FALSE,
-  row.names = FALSE,
-  quote = FALSE
-)
+  # outputs text log so the user can check no names were merged unnecessarily
+  write.table(
+    similar,
+    "merged-names.txt",
+    col.names = FALSE,
+    row.names = FALSE,
+    quote = FALSE
+  )
 }
 # Outputs a report in the format [Professor's name].csv in Course Code, Course Title, Reponse Rate, Num Evals, Course Size, Average, Frequencies format
 # for each professor in reviewl
@@ -284,7 +286,6 @@ for (prof in 1:length(reviewl)) {
   
   prof.report.name <- paste(prof.name.formatted, ".csv", sep = "")
   
-  setwd("reports")
   write.table(prof.report,
               prof.report.name,
               sep = ",",
@@ -335,4 +336,4 @@ write.table(
 )
 
 winDialog(type = c("ok"),
-          "Your reports have been generated in the program directory.")
+          "Your reports have been generated in the reports folder.")

@@ -281,8 +281,8 @@ for (prof in 1:length(reviewl)) {
     )
   rownames(prof.report) <- NULL
   
-  prof.name.formatted <- gsub(",", ".", prof.name)
-  prof.name.formatted <- gsub(" ", "", prof.name.formatted)
+  
+  prof.name.formatted <- gsub("[[:punct:]]", ".", prof.name)
   
   prof.report.name <- paste(prof.name.formatted, ".csv", sep = "")
   

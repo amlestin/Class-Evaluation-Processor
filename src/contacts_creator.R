@@ -30,11 +30,15 @@ contacts["PROF12"] <- NA
 contacts["PROF13"] <- NA
 contacts["PROF14"] <- NA
 contacts["PROF15"] <- NA
+contacts["PROF16"] <- NA
 contacts["TA1"] <- NA
 contacts["TA2"] <- NA
 contacts["TA3"] <- NA
 contacts["TA4"] <- NA
-
+contacts["TA5"] <- NA
+contacts["TA6"] <- NA
+contacts["TA7"] <- NA
+contacts["TA8"] <- NA
 
 error.log <- c()
 profs <- list()

@@ -9,18 +9,19 @@ second.names <- second$Name
 View(first)
 View(second)
 
+
+max.name.diff <- 8
 for (left in first.names) {
-  max.name.diff <- 4
-  
-  other.name.index = which(left == second.names)
-  other.name.index = which(left == second.names)
+  other.name.index = which(adist(left, second.names) < max.name.diff)
   
   other.name = as.character(second.names[other.name.index])
   
-  other.exists <- adist(left, other.name) < max.name.diff
+  other.exists <- length(other.name > 0)
   
   if(other.exists) {
-    print(paste("Found a match for", noquote(left)))
+    print(paste("Found a match: ", noquote(left), " = ", other.name))
+  } else {
+    print(paste("                No match for: ", left))
   }
   
 }

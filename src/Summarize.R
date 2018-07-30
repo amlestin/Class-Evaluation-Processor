@@ -10,7 +10,8 @@ View(first)
 View(second)
 
 
-max.name.diff <- 8
+max.name.diff <- 12
+missed.count <- 0
 for (left in first.names) {
   other.name.index = which(adist(left, second.names) < max.name.diff)
   
@@ -21,7 +22,11 @@ for (left in first.names) {
   if(other.exists) {
     print(paste("Found a match: ", noquote(left), " = ", other.name))
   } else {
-    print(paste("                No match for: ", left))
+    print(paste("***********No match for: ", left))
+    missed.count <- missed.count + 1
   }
   
 }
+
+print("Missed: ")
+print(missed.count)

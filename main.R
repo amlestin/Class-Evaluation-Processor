@@ -67,75 +67,89 @@ contacts <- unique(contacts)
 # Gets all reviews for each professor in contacts and adds them to reviewl
 reviewl <- list()
 comment.files <- list()
-for (cur.eval in 3:nrow(evals)) {
-  # for each P column, e.g, P1
-  for (pctr in 1:15) {
-    # convert the P number to a character
-    pctr.char <- as.character(pctr)
-    # combine the character and number to have a valid column index, e.g., "P1"
-    pcol <-  paste("PROF", pctr.char, sep = "")
-    
-    # add one to the pctr because Q3 corresponds to P1's review
-    qctr.char <- as.character(pctr + 1)
-    qcol <- paste("Q", qctr.char, sep = "")
-    
-    # the question answer/review is the value at qcol
-    review <- evals[cur.eval, qcol]
-    # level (integer) to character
-    review <- as.character(review)
-    
-    prof.name <- as.character(evals[cur.eval, pcol])
-    # save the current eval's course title into a variable
-    course.title <- as.character(evals[cur.eval, "TITLE"])
-    subject.code <- as.character(evals[cur.eval, "SUBJECT.CODE"])
-    course.number <- as.character(evals[cur.eval, "COURSE.."])
-    sequence.number <-
-      as.character(evals[cur.eval, "SECTION.."])
-    
-    course.code <-
-      paste(subject.code, course.number, sequence.number, sep = ".")
-    
-    if (prof.name != "") {
-      # some respondents skip questions
-      if (review != "") {
-        reviewl[[prof.name]]$courses[[course.title]][[course.code]]$ratings <-
-          c(reviewl[[prof.name]]$courses[[course.title]][[course.code]]$ratings, review)
-        
+
+num.prof.cols <- 0
+num.ta.cols <- 0
+
+if (num.prof.cols > 0) {
+  for (cur.eval in 3:nrow(evals)) {
+    # for each P column, e.g, P1
+    for (pctr in 1:num.prof.cols) {
+      # convert the P number to a character
+      pctr.char <- as.character(pctr)
+      # combine the character and number to have a valid column index, e.g., "P1"
+      pcol <-  paste("PROF", pctr.char, sep = "")
+      
+      # add one to the pctr because Q3 corresponds to P1's review
+      qctr.char <- as.character(pctr + 1)
+      qcol <- paste("Q", qctr.char, sep = "")
+      
+      # the question answer/review is the value at qcol
+      review <- evals[cur.eval, qcol]
+      # level (integer) to character
+      review <- as.character(review)
+      
+      prof.name <- as.character(evals[cur.eval, pcol])
+      # save the current eval's course title into a variable
+      course.title <- as.character(evals[cur.eval, "TITLE"])
+      subject.code <- as.character(evals[cur.eval, "SUBJECT.CODE"])
+      course.number <- as.character(evals[cur.eval, "COURSE.."])
+      sequence.number <-
+        as.character(evals[cur.eval, "SECTION.."])
+      
+      course.code <-
+        paste(subject.code, course.number, sequence.number, sep = ".")
+      
+      if (prof.name != "") {
+        # some respondents skip questions
+        if (review != "") {
+          reviewl[[prof.name]]$courses[[course.title]][[course.code]]$ratings <-
+            c(reviewl[[prof.name]]$courses[[course.title]][[course.code]]$ratings, review)
+          
+        }
       }
     }
+    
+    if (num.ta.cols > 0) {
+      for (ta.ctr in 1:num.ta.cols) {
+        ta.ctr.char <- as.character(ta.ctr)
+        ta.review.col.char <- as.character(ta.ctr + 17)
+        
+        ta.col <- paste("TA", ta.ctr.char, sep = "")
+        ta.review.col <- paste("Q", ta.review.col.char, sep = "")
+        
+        ta.name <- as.character(evals[cur.eval, ta.col])
+        ta.review <- as.character(evals[cur.eval, ta.review.col])
+        
+        if (ta.name != "") {
+          if (ta.review != "") {
+            reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings <-
+              c(reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings,  ta.review)
+          }
+        }
+      }
+    }
+    
+    eval.comment <- as.character(evals[cur.eval, "Q22"])
+    
+    alpha.course.title <- gsub("[[:punct:]]", ".", course.title)
+    comment.file.name <-
+      paste(paste(course.code, alpha.course.title, sep = "-"),
+            ".txt",
+            sep = "")
+    
+    if (eval.comment != "") {
+      comment.block <- paste("Comment: ", eval.comment, "\n\n")
+      comment.files[[comment.file.name]] <-
+        c(comment.files[[comment.file.name]], comment.block)
+    }
   }
-  
-  # for (ta.ctr in 1:3) {
-  #   ta.ctr.char <- as.character(ta.ctr)
-  #   ta.review.col.char <- as.character(ta.ctr + 17)
-  #
-  #   ta.col <- paste("TA", ta.ctr.char, sep = "")
-  #   ta.review.col <- paste("Q", ta.review.col.char, sep = "")
-  #
-  #   ta.name <- as.character(evals[cur.eval, ta.col])
-  #   ta.review <- as.character(evals[cur.eval, ta.review.col])
-  #
-  #   if (ta.name != "") {
-  #     if (ta.review != "") {
-  #       reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings <-
-  #         c(reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings,  ta.review)
-  #     }
-  #   }
-  # }
-  
-  eval.comment <- as.character(evals[cur.eval, "Q22"])
-  
-  alpha.course.title <- gsub("[[:punct:]]", ".", course.title)
-  comment.file.name <-
-    paste(paste(course.code, alpha.course.title, sep = "-"),
-          ".txt",
-          sep = "")
-  
-  if (eval.comment != "") {
-    comment.block <- paste("Comment: ", eval.comment, "\n\n")
-    comment.files[[comment.file.name]] <-
-      c(comment.files[[comment.file.name]], comment.block)
-  }
+} else {
+  winDialog(
+    type = c("ok"),
+    "Variable num.prof.cols <= 0. Update script with the number of PROF[X] columns in the contacts file you uploaded to Qualtrics."
+  )
+  quit(save = "ask")
 }
 
 for (cur.file in 1:length(names(comment.files))) {
@@ -334,6 +348,13 @@ write.table(
   row.names = FALSE,
   na = ""
 )
+
+if (num.ta.cols <= 0) {
+  winDialog(
+    type = c("ok"),
+    "Variable num.ta.cols was <= 0, so no TA reports were generated. Update script with the correct number if this is an error."
+  )
+}
 
 winDialog(type = c("ok"),
           "Your reports have been generated in the reports folder.")

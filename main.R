@@ -37,6 +37,9 @@ for (code in 1:length(unique.codes)) {
   course.sizes[[cur.code]] <- length(which(all.codes == cur.code))
 }
 
+
+## CUSTOMIZE IF PROF COLS ARE GREATER THAN 16 ##
+
 # vector of character representations of all professor names used in the file
 contacts <- c(
   # [-c(1:2)] removes the headers from each column

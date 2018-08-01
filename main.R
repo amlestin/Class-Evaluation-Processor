@@ -1,5 +1,5 @@
 # Author: Arnold Lestin
-# Purpose: Extracts data from a Qualtrics survey evaluation CSV export file and outputs a Report.csv file with average reviews per professor
+# Purpose: Extracts data from a Qualtrics survey evaluation CSV export file and outputs summary reports in "./reports"
 
 # opens a window to select the input file
 winDialog(type = c("ok"),

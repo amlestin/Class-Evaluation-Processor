@@ -362,6 +362,7 @@ write.table(
   na = ""
 )
 
+# reminds user that the num.ta.cols variable was not configured
 if (num.ta.cols <= 0) {
   winDialog(
     type = c("ok"),

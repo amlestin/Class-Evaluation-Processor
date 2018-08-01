@@ -17,8 +17,10 @@ library("scales")
 evals <- read.csv(evaluations.filename)
 student.contacts <- read.csv(student.contacts.filename)
 
+# sets the directory to output reports files to
 setwd("./reports")
 
+# determines course sizes by counting student contacts per course
 all.codes <- c()
 for (i in 1:nrow(student.contacts)) {
   s.code <- as.character(student.contacts[i, "SUBJECT.CODE"])
@@ -40,7 +42,7 @@ for (code in 1:length(unique.codes)) {
 
 ## CUSTOMIZE IF PROF COLS ARE GREATER THAN 16 ##
 
-# vector of character representations of all professor names used in the file
+# creates vector of character representations of all professor names used in the file
 contacts <- c(
   # [-c(1:2)] removes the headers from each column
   # as.character converts from levels (integer) representations to names (character)
@@ -62,28 +64,32 @@ contacts <- c(
   as.character(evals$PROF16[-c(1:2)])
 )
 
-# remove empty contacts (not all classes have all 16 professor slots filled)
+# removes empty contacts (not all classes have all 16 professor slots filled)
 contacts <- contacts[-(which(contacts == ""))]
-# remove duplicates
+# removes duplicates
 contacts <- unique(contacts)
 
 # Gets all reviews for each professor in contacts and adds them to reviewl
 reviewl <- list()
 comment.files <- list()
 
-num.prof.cols <- 0
-num.ta.cols <- 0
+
+##  COLUMN NUMBER CONFIGURATION ##
+default.num.prof.cols <- 0
+default.num.ta.cols <- 0
+num.prof.cols <- default.num.prof.cols
+num.ta.cols <- default.num.ta.col
 
 if (num.prof.cols > 0) {
   for (cur.eval in 3:nrow(evals)) {
     # for each P column, e.g, P1
     for (pctr in 1:num.prof.cols) {
-      # convert the P number to a character
+      # converts the P number to a character for string pasting
       pctr.char <- as.character(pctr)
-      # combine the character and number to have a valid column index, e.g., "P1"
+      # combines the character and number to have a valid column index, e.g., "P1"
       pcol <-  paste("PROF", pctr.char, sep = "")
       
-      # add one to the pctr because Q3 corresponds to P1's review
+      # adds one to the pctr because column Q2 corresponds to column P1's review
       qctr.char <- as.character(pctr + 1)
       qcol <- paste("Q", qctr.char, sep = "")
       
@@ -93,7 +99,7 @@ if (num.prof.cols > 0) {
       review <- as.character(review)
       
       prof.name <- as.character(evals[cur.eval, pcol])
-      # save the current eval's course title into a variable
+      # saves the current eval's course information into a variable
       course.title <- as.character(evals[cur.eval, "TITLE"])
       subject.code <- as.character(evals[cur.eval, "SUBJECT.CODE"])
       course.number <- as.character(evals[cur.eval, "COURSE.."])
@@ -104,7 +110,7 @@ if (num.prof.cols > 0) {
         paste(subject.code, course.number, sequence.number, sep = ".")
       
       if (prof.name != "") {
-        # some respondents skip questions
+        # ignores empty reviews (some respondents skip questions)
         if (review != "") {
           reviewl[[prof.name]]$courses[[course.title]][[course.code]]$ratings <-
             c(reviewl[[prof.name]]$courses[[course.title]][[course.code]]$ratings, review)
@@ -113,6 +119,7 @@ if (num.prof.cols > 0) {
       }
     }
     
+    # checks if ta reports was enabled by updating the variable num.ta.cols
     if (num.ta.cols > 0) {
       for (ta.ctr in 1:num.ta.cols) {
         ta.ctr.char <- as.character(ta.ctr)
@@ -148,6 +155,7 @@ if (num.prof.cols > 0) {
     }
   }
 } else {
+  # error shows if script cannot be run because of invalid num.prof.cols value
   winDialog(
     type = c("ok"),
     "Variable num.prof.cols <= 0. Update script with the number of PROF[X] columns in the contacts file you uploaded to Qualtrics."
@@ -155,11 +163,13 @@ if (num.prof.cols > 0) {
   quit(save = "ask")
 }
 
+# outputs comment text files for each course
 for (cur.file in 1:length(names(comment.files))) {
   cur.file.name <- names(comment.files[cur.file])
   write(comment.files[[cur.file.name]], file = cur.file.name)
 }
 
+# combines reports for professors with similar names
 similar <- c()
 max.name.diff <- 4
 
@@ -207,8 +217,8 @@ if (length(similar) != 0) {
     quote = FALSE
   )
 }
-# Outputs a report in the format [Professor's name].csv in Course Code, Course Title, Reponse Rate, Num Evals, Course Size, Average, Frequencies format
-# for each professor in reviewl
+
+# outputs a file for each professor titled [Professor's name].csv in the format of (Course Code, Course Title, Reponse Rate, Num Evals, Course Size, Average, Frequencies)
 summary.report <- list()
 for (prof in 1:length(reviewl)) {
   num.courses <- length(reviewl[[prof]]$courses)
@@ -228,7 +238,7 @@ for (prof in 1:length(reviewl)) {
       cur.course.code <-
         names(reviewl[[prof]]$courses[[cur.course]][cur.section])
       
-      # number of "Excellent" reviews in row
+      # counts frequencies of each possible review response
       ecount <- length(which(reviews == "Excellent"))
       
       vgcount <- length(which(reviews == "Very Good"))
@@ -241,12 +251,11 @@ for (prof in 1:length(reviewl)) {
       
       # vector of all rating counts
       freqs <- c(ecount, vgcount, gcount, fcount, pcount)
-      #names(freqs) <- c("Excellent", "Very Good", "Good", "Fair", "Poor")
-      
+
       reviewl[[prof]]$courses[[cur.course]][[cur.section]][["freqs"]] <-
         freqs
       
-      # sum of all ratings, i.e., number of ratings the professor received
+      # sums frequencies of all reviews in the section, i.e., total number of ratings the professor received
       num.ratings <- sum(freqs)
       
       # calculates a weighted average
@@ -263,8 +272,7 @@ for (prof in 1:length(reviewl)) {
       
       cur.course.size <- course.sizes[[cur.course.code]]
       
-      
-      # use the scales package to represent response rate as a percent
+      # use the scales package to represent the response rate as a percent
       reviewl[[prof]]$courses[[cur.course]][[cur.section]][["response.rate"]] <-
         percent(num.ratings / cur.course.size)
       
@@ -317,9 +325,11 @@ for (prof in 1:length(reviewl)) {
   summary.line.length <- length(summary.line)
   summary.report.ncol <- ncol(summary.report)
   
+  # if the summary report is not empty
   if (is.null(summary.report.ncol) == FALSE) {
     if (summary.line.length < summary.ncol)
     {
+      # pad the line with NA values to make equal width rows
       summary.line <-
         c(summary.line,
           rep(NA, summary.report.ncol - summary.line.length))

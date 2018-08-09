@@ -247,19 +247,31 @@ for (prof in 1:length(reviewl)) {
         names(reviewl[[prof]]$courses[[cur.course]][cur.section])
       
       # counts frequencies of each possible review response
-      ecount <- length(which(reviews == "Excellent"))
-      
-      vgcount <- length(which(reviews == "Very Good"))
-      
-      gcount <- length(which(reviews == "Good"))
-      
-      fcount <- length(which(reviews == "Fair"))
-      
-      pcount <- length(which(reviews == "Poor"))
+      if (any(reviews == "Excellent")) {
+        ecount <- length(which(reviews == "Excellent"))
+        
+        vgcount <- length(which(reviews == "Very Good"))
+        
+        gcount <- length(which(reviews == "Good"))
+        
+        fcount <- length(which(reviews == "Fair"))
+        
+        pcount <- length(which(reviews == "Poor"))
+      } else {
+        ecount <- length(which(reviews == "5"))
+        
+        vgcount <- length(which(reviews == "4"))
+        
+        gcount <- length(which(reviews == "3"))
+        
+        fcount <- length(which(reviews == "2"))
+        
+        pcount <- length(which(reviews == "1"))
+      }
       
       # vector of all rating counts
       freqs <- c(ecount, vgcount, gcount, fcount, pcount)
-
+      
       reviewl[[prof]]$courses[[cur.course]][[cur.section]][["freqs"]] <-
         freqs
       

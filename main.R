@@ -168,7 +168,7 @@ if (num.prof.cols > 0) {
     type = c("ok"),
     "Variable num.prof.cols <= 0. Update script with the number of PROF[X] columns in the contacts file you uploaded to Qualtrics."
   )
-  quit(save = "ask")
+  # quit(save = "ask")
 }
 
 # outputs comment text files for each course

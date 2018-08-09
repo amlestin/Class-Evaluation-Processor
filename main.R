@@ -1,6 +1,14 @@
 # Author: Arnold Lestin
 # Purpose: Extracts data from a Qualtrics survey evaluation CSV export file and outputs summary reports in "./reports"
 
+
+# # DOWNLOAD SURVEY RESPONSE DATA USING QUALTRICS API #
+# #install.packages("reticulate")
+# library(reticulate)
+# qualtrics.api <- source_python("src/qualtrics_api.py")
+# # survey data will be saved to the same directory as this script
+# download_survey("API_TOKEN", "SURVEY_ID", "DATACENTER_ID")
+
 # opens a window to select the input file
 winDialog(type = c("ok"),
           "Select the report file you exported from Qualtrics after the evaluation.")
@@ -78,7 +86,7 @@ comment.files <- list()
 default.num.prof.cols <- 0
 default.num.ta.cols <- 0
 num.prof.cols <- default.num.prof.cols
-num.ta.cols <- default.num.ta.col
+num.ta.cols <- default.num.ta.cols
 
 if (num.prof.cols > 0) {
   for (cur.eval in 3:nrow(evals)) {

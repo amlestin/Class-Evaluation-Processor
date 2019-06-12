@@ -11,8 +11,8 @@ winDialog(type = c("ok"),
 profs.by.crn.file <- file.choose()
 
 profs.by.crn <-
-  read.csv(profs.by.crn.file, stringsAsFactors = FALSE)
-contacts <- read.csv(contacts.file)
+  read.csv(profs.by.crn.file, colClasses = "character")
+contacts <- read.csv(contacts.file, colClasses = "character")
 
 
 contacts["PROF1"] <- NA
@@ -100,7 +100,11 @@ for (i in 1:nrow(contacts)) {
   course.tas <- as.character(course.info[ta.cols])
   original.ta.cols <- grep("TA[0-9]", colnames(contacts[i,]))
   
+# course.profs[which(is.na(course.profs))] <- ""
+  course.tas[which(is.na(course.tas))] <- ""
+  
   contacts[i, original.ta.cols] <- course.tas
+  
   # if (length(course.tas) != 0) {
   # course.tas <-
   #   unlist(

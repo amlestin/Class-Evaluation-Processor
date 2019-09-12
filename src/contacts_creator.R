@@ -28,14 +28,6 @@ contacts["PROF10"] <- NA
 contacts["PROF11"] <- NA
 contacts["PROF12"] <- NA
 contacts["PROF13"] <- NA
-contacts["PROF14"] <- NA
-# contacts["PROF15"] <- NA
-# contacts["PROF16"] <- NA
-# contacts["PROF17"] <- NA
-# contacts["PROF18"] <- NA
-# contacts["PROF19"] <- NA
-# contacts["PROF20"] <- NA
-# contacts["PROF21"] <- NA
 
 contacts["TA1"] <- NA
 contacts["TA2"] <- NA
@@ -43,8 +35,14 @@ contacts["TA3"] <- NA
 contacts["TA4"] <- NA
 contacts["TA5"] <- NA
 contacts["TA6"] <- NA
-# contacts["TA7"] <- NA
-# contacts["TA8"] <- NA
+contacts["TA7"] <- NA
+contacts["TA8"] <- NA
+contacts["TA9"] <- NA
+contacts["TA10"] <- NA
+contacts["TA11"] <- NA
+contacts["TA12"] <- NA
+contacts["TA13"] <- NA
+contacts["TA14"] <- NA
 
 convert.lastname.comma.firstname.to.firstname.space.lastname <-
   function(pair.of.strings) {
@@ -104,28 +102,28 @@ for (i in 1:nrow(contacts)) {
   course.tas[which(is.na(course.tas))] <- ""
   
   contacts[i, original.ta.cols] <- course.tas
-  
-  # if (length(course.tas) != 0) {
-  # course.tas <-
-  #   unlist(
-  #     lapply(
-  #       strsplit(course.tas, ", "),
-  #       convert.lastname.comma.firstname.to.firstname.space.lastname
-  #     )
-  #   )
-  # contacts[i, original.ta.cols] <- course.tas
-  # }
-  
+
+   if (length(course.tas) != 0) {
+   course.tas <-
+     unlist(
+       lapply(
+         strsplit(course.tas, ", "),
+         convert.lastname.comma.firstname.to.firstname.space.lastname
+       )
+     )
+   contacts[i, original.ta.cols] <- course.tas
+   }
+
   # TODO: may need to AND parameters to prevent
   valid.profs <-
     as.character(course.profs[unique(c(which(course.profs != ""), which(!is.na(course.profs))))])
-  # valid.profs <-
-  #   unlist(
-  #     lapply(
-  #       strsplit(valid.profs, ", "),
-  #       convert.lastname.comma.firstname.to.firstname.space.lastname
-  #     )
-  #   )
+   valid.profs <-
+     unlist(
+       lapply(
+         strsplit(valid.profs, ", "),
+         convert.lastname.comma.firstname.to.firstname.space.lastname
+       )
+     )
   
   # TODO: should not occur because of check above
   if (length(which(valid.profs == "")) > 0) {

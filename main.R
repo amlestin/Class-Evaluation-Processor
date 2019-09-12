@@ -1,13 +1,19 @@
 # Author: Arnold Lestin
 # Purpose: Extracts data from a Qualtrics survey evaluation CSV export file and outputs summary reports in "./reports"
 
-
 # # DOWNLOAD SURVEY RESPONSE DATA USING QUALTRICS API #
 # #install.packages("reticulate")
 # library(reticulate)
 # qualtrics.api <- source_python("src/qualtrics_api.py")
 # # survey data will be saved to the same directory as this script
 # download_survey("API_TOKEN", "SURVEY_ID", "DATACENTER_ID")
+
+##  COLUMN NUMBER CONFIGURATION ##
+#num.prof.cols <- 16
+#num.ta.cols <- 8
+num.prof.cols <- 21
+num.ta.cols <- 0
+
 
 # opens a window to select the input file
 winDialog(type = c("ok"),
@@ -18,6 +24,7 @@ winDialog(
   type = c("ok"),
   "Select the contacts file you imported into Qualtrics before the evaluation."
 )
+
 student.contacts.filename <- file.choose()
 
 #install.packages("scales")
@@ -26,7 +33,45 @@ evals <- read.csv(evaluations.filename)
 student.contacts <- read.csv(student.contacts.filename)
 
 # sets the directory to output reports files to
-setwd("./reports")
+setwd("~/Class-Evaluation-Processor/reports")
+
+# check for duplicate professors in the student contacts
+# only checks this method if contacts file has CRNs
+error.log <- c()
+if ("CRN" %in% names(student.contacts) == TRUE) {
+  library(data.table)
+  DT <- data.table(student.contacts, stringsAsFactors = FALSE)
+  DT <- unique(unique(DT, by = "CRN"), by = "UID.")
+  for (course.ctr in 1:nrow(DT)) {
+    profs.indices <- which(grepl("PROF", names(DT)))
+    row <- DT[course.ctr, ]
+    
+    profs <- c()
+    dups <- c()
+    for (i in profs.indices) {
+      p = as.character(row[[i]])
+      
+      if (p %in% profs) {
+        dups <- c(dups, p)
+      }
+      profs <- c(profs, p)
+    }
+    
+    if (length(dups) > 0) {
+      dups <- dups[dups != ""]
+      dups <- dups[dups != "NA"]
+      dups <- dups[!is.na(dups)]
+      dups.flag <- length(dups) > 0
+      
+      if (dups.flag == TRUE) {
+        error.message <-
+          paste(dups,
+                as.character(DT[course.ctr, "CRN"]))
+        error.log <- c(error.log, error.message)
+      }
+    }
+  }
+}
 
 # determines course sizes by counting student contacts per course
 all.codes <- c()
@@ -47,8 +92,11 @@ for (code in 1:length(unique.codes)) {
   course.sizes[[cur.code]] <- length(which(all.codes == cur.code))
 }
 
-
-## CUSTOMIZE IF PROF COLS ARE GREATER THAN 16 ##
+################################################
+#                                              #
+# CUSTOMIZE IF PROF COLS ARE GREATER THAN 16   #
+#                                              #
+################################################
 
 # creates vector of character representations of all professor names used in the file
 contacts <- c(
@@ -69,7 +117,12 @@ contacts <- c(
   as.character(evals$PROF13[-c(1:2)]),
   as.character(evals$PROF14[-c(1:2)]),
   as.character(evals$PROF15[-c(1:2)]),
-  as.character(evals$PROF16[-c(1:2)])
+  as.character(evals$PROF16[-c(1:2)]),
+  as.character(evals$PROF17[-c(1:2)]),
+  as.character(evals$PROF18[-c(1:2)]),
+  as.character(evals$PROF19[-c(1:2)]),
+  as.character(evals$PROF20[-c(1:2)]),
+  as.character(evals$PROF21[-c(1:2)])
 )
 
 # removes empty contacts (not all classes have all 16 professor slots filled)
@@ -81,16 +134,10 @@ contacts <- unique(contacts)
 reviewl <- list()
 comment.files <- list()
 
-
-##  COLUMN NUMBER CONFIGURATION ##
-default.num.prof.cols <- 0
-default.num.ta.cols <- 0
-num.prof.cols <- default.num.prof.cols
-num.ta.cols <- default.num.ta.cols
-
 if (num.prof.cols > 0) {
   for (cur.eval in 3:nrow(evals)) {
     # for each P column, e.g, P1
+    previously.seen.profs <- c()
     for (pctr in 1:num.prof.cols) {
       # converts the P number to a character for string pasting
       pctr.char <- as.character(pctr)
@@ -107,6 +154,19 @@ if (num.prof.cols > 0) {
       review <- as.character(review)
       
       prof.name <- as.character(evals[cur.eval, pcol])
+      if (length(prof.name) == 0 || is.na(prof.name) || prof.name == "")
+        next()
+      
+      # check for duplicate professors in a course
+      if (prof.name %in% previously.seen.profs) {
+        error.log <-
+          c(error.log, 
+            paste(prof.name, as.character(evals[cur.eval, "CRN"]))
+            )
+        next()
+      }
+      previously.seen.profs <- c(previously.seen.profs, prof.name)
+      
       # saves the current eval's course information into a variable
       course.title <- as.character(evals[cur.eval, "TITLE"])
       subject.code <- as.character(evals[cur.eval, "SUBJECT.CODE"])
@@ -131,6 +191,11 @@ if (num.prof.cols > 0) {
     if (num.ta.cols > 0) {
       for (ta.ctr in 1:num.ta.cols) {
         ta.ctr.char <- as.character(ta.ctr)
+        ###############################
+        #                             #
+        #          MAGIC NUMBER       #
+        #                             #
+        ###############################
         ta.review.col.char <- as.character(ta.ctr + 17)
         
         ta.col <- paste("TA", ta.ctr.char, sep = "")
@@ -148,7 +213,7 @@ if (num.prof.cols > 0) {
       }
     }
     
-    eval.comment <- as.character(evals[cur.eval, "Q22"])
+    eval.comment <- as.character(evals[cur.eval, "W22"])
     
     alpha.course.title <- gsub("[[:punct:]]", ".", course.title)
     comment.file.name <-
@@ -224,6 +289,7 @@ if (length(similar) != 0) {
     row.names = FALSE,
     quote = FALSE
   )
+  
 }
 
 # outputs a file for each professor titled [Professor's name].csv in the format of (Course Code, Course Title, Reponse Rate, Num Evals, Course Size, Average, Frequencies)
@@ -247,7 +313,10 @@ for (prof in 1:length(reviewl)) {
         names(reviewl[[prof]]$courses[[cur.course]][cur.section])
       
       # counts frequencies of each possible review response
-      if (any(reviews == "Excellent")) {
+      if (any(reviews == "Excellent") |
+          any(reviews == "Very Good") |
+          any(reviews == "Good") |
+          any(reviews == "Fair") | any(reviews == "Poor")) {
         ecount <- length(which(reviews == "Excellent"))
         
         vgcount <- length(which(reviews == "Very Good"))
@@ -369,6 +438,8 @@ summary.report <- do.call(rbind, lapply(summary.report, function(z)
 
 col1.name <- "Name"
 col2.name <- "Average Evaluation"
+col4.name <- "Total Number of Evals"
+col5.name <- "Total Number of Students"
 col3.name <- paste("C", (1:(max.ncol - 2)), sep = "")
 
 colnames(summary.report) <- c(col1.name, col2.name, col3.name)
@@ -376,11 +447,27 @@ colnames(summary.report) <- c(col1.name, col2.name, col3.name)
 # @ symbol used to ensure the report is listed first in the directory
 write.table(
   summary.report,
-  "@Report.csv",
+  paste("@Report", evals[3, "TERM.DESCRIPTION"], ".csv"),
   sep = ",",
   row.names = FALSE,
   na = ""
 )
+
+if (length(error.log) > 0) {
+  # outputs error log for duplicated professors by course
+  error.log <- unique(error.log)  
+  write.table(
+    error.log,
+    "error-log.txt",
+    col.names = FALSE,
+    row.names = FALSE,
+    quote = FALSE
+  )
+  winDialog(type = c("ok"),
+            "Please check error-log.txt to repair the input data!")
+  
+}
+
 
 # reminds user that the num.ta.cols variable was not configured
 if (num.ta.cols <= 0) {

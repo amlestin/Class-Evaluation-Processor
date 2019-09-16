@@ -360,6 +360,8 @@ for (prof in 1:length(reviewl)) {
       cur.course.title <- names(reviewl[[prof]]$courses[cur.course])
       
       cur.course.size <- course.sizes[[cur.course.code]]
+#      summary.course.sizes <- c(summary.course.sizes, cur.course.size)
+#      reviewl[[prof]]$total.students.taught <-  reviewl[[prof]]$total.students.taught + cur.course.size
       
       # use the scales package to represent the response rate as a percent
       reviewl[[prof]]$courses[[cur.course]][[cur.section]][["response.rate"]] <-
@@ -409,8 +411,17 @@ for (prof in 1:length(reviewl)) {
   summary.num.ratings <- sum(summary.num.ratings)
   
   summary.average <- summary.ratings.prod / summary.num.ratings
+  
+  total.students.taught <- sum(as.numeric(prof.report[, 5]))
+  num.courses.taught <- length(summary.course.names)
+  
   summary.line <-
-    c(prof.name, summary.average, summary.course.names)
+    c(prof.name, round(summary.average, digits=2), summary.num.ratings, total.students.taught, num.courses.taught, summary.course.names) 
+
+  # summary.line <-
+  #   c(prof.name, summary.average, summary.course.names)
+  
+  
   summary.line.length <- length(summary.line)
   summary.report.ncol <- ncol(summary.report)
   
@@ -440,9 +451,10 @@ col1.name <- "Name"
 col2.name <- "Average Evaluation"
 col4.name <- "Total Number of Evals"
 col5.name <- "Total Number of Students"
-col3.name <- paste("C", (1:(max.ncol - 2)), sep = "")
+col6.name <- "Total Number of Courses Taught"
+col3.name <- paste("C", (1:(max.ncol - 5)), sep = "")
 
-colnames(summary.report) <- c(col1.name, col2.name, col3.name)
+colnames(summary.report) <- c(col1.name, col2.name, col4.name, col5.name, col6.name, col3.name)
 
 # @ symbol used to ensure the report is listed first in the directory
 write.table(

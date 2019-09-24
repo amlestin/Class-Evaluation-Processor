@@ -8,12 +8,10 @@
 # # survey data will be saved to the same directory as this script
 # download_survey("API_TOKEN", "SURVEY_ID", "DATACENTER_ID")
 
-##  COLUMN NUMBER CONFIGURATION ##
-#num.prof.cols <- 16
-#num.ta.cols <- 8
-num.prof.cols <- 13
-num.ta.cols <- 0
-
+if (!require("openxlsx", character.only = T, quietly = T)) {
+  install.packages("openxlsx")
+}
+library(openxlsx)
 
 # opens a window to select the input file
 winDialog(type = c("ok"),
@@ -29,8 +27,14 @@ student.contacts.filename <- file.choose()
 
 #install.packages("scales")
 library("scales")
-evals <- read.csv(evaluations.filename)
+evals <- read.csv(evaluations.filename, stringsAsFactors = FALSE)
 student.contacts <- read.csv(student.contacts.filename)
+
+##  COLUMN NUMBER CONFIGURATION ##
+num.prof.cols <- length(grep("PROF", names(evals)))
+num.ta.cols <- length(grep("TA", names(evals)))
+num.ta.cols <- 0
+
 
 # sets the directory to output reports files to
 setwd("~/Class-Evaluation-Processor/reports")
@@ -44,7 +48,7 @@ if ("CRN" %in% names(student.contacts) == TRUE) {
   DT <- unique(unique(DT, by = "CRN"), by = "UID.")
   for (course.ctr in 1:nrow(DT)) {
     profs.indices <- which(grepl("PROF", names(DT)))
-    row <- DT[course.ctr, ]
+    row <- DT[course.ctr,]
     
     profs <- c()
     dups <- c()
@@ -92,68 +96,60 @@ for (code in 1:length(unique.codes)) {
   course.sizes[[cur.code]] <- length(which(all.codes == cur.code))
 }
 
-unique.titles <- as.character(unique(student.contacts[, "TITLE"]))
-unique.titles <- sort(unique.titles)
+course.codes.to.crn <- list(all.codes)
 
-# 0) sort everything so section 1 come before 2
-# 1) List of titles of all courses
-# 2) For each title, find relevant unique course codes
-# 3) For each course  code, print prof stats
-
-
-#mapply(function(title) which(sapply(reviewl, function(prof) is.element(title, names(prof$courses)))), unique.titles)
-
-
-mapply(function(title) which(sapply(reviewl, function(prof) is.element(title, names(prof$courses)))), unique.titles)
-
-
-
-
-prof.cols <- grep("PROF", names(evals))
-profs.by.course <-
-  mapply(function(course) course <- course[which(course != "")],
-  mapply(
-    function(course)
-      as.character(unlist(course)),
-    mapply(function(course.title)
-      evals[which(evals$TITLE == course.title), ][1, ][, prof.cols]
-      , unique.titles, SIMPLIFY = F), SIMPLIFY = F), SIMPLIFY = F)
+create.semester.summary <- function(reviewl) {
+  unique.titles <- as.character(unique(student.contacts[, "TITLE"]))
+  unique.titles <- sort(unique.titles)
   
-
-
-################################################
-#                                              #
-# CUSTOMIZE IF PROF COLS ARE GREATER THAN 16   #
-#                                              #
-################################################
+  # 0) sort everything so section 1 come before 2
+  # 1) List of titles of all courses
+  # 2) For each title, find relevant unique course codes
+  # 3) For each course  code, print prof stats
+  
+  prof.cols <- grep("PROF", names(evals))
+  profs.by.course <-
+    mapply(
+      function(course)
+        course <- course[which(course != "")],
+      mapply(
+        function(course)
+          as.character(unlist(course)),
+        mapply(function(course.title)
+#          evals[which(evals$TITLE == course.title), ][1, ][, prof.cols]
+          unique(evals[which(evals$TITLE == course.title), ][, prof.cols])
+          , unique.titles, SIMPLIFY = F),
+        SIMPLIFY = F
+      ),
+      SIMPLIFY = F
+    )
+  
+  semester.summary <- c()
+  for (i in seq(length(profs.by.course))) {
+    course.name <- names(profs.by.course)[[i]]
+    
+    course.summary <- list()
+    for (j in seq(length(profs.by.course[[i]]))) {
+      prof.name <- profs.by.course[[i]][[j]]
+      prof.evals <-
+        reviewl[[which(names(reviewl) == prof.name)]][["courses"]][[course.name]]
+      prof.evals <-
+        prof.evals[sort(names(prof.evals), index.return = T)$ix]
+      course.summary[[prof.name]] <- prof.evals
+    }
+    
+    semester.summary[[course.name]] <- course.summary
+  }
+  return(semester.summary)
+}
 
 # creates vector of character representations of all professor names used in the file
-contacts <- c(
-  # [-c(1:2)] removes the headers from each column
-  # as.character converts from levels (integer) representations to names (character)
-  as.character(evals$PROF1[-c(1:2)]),
-  as.character(evals$PROF2[-c(1:2)]),
-  as.character(evals$PROF3[-c(1:2)]),
-  as.character(evals$PROF4[-c(1:2)]),
-  as.character(evals$PROF5[-c(1:2)]),
-  as.character(evals$PROF6[-c(1:2)]),
-  as.character(evals$PROF7[-c(1:2)]),
-  as.character(evals$PROF8[-c(1:2)]),
-  as.character(evals$PROF9[-c(1:2)]),
-  as.character(evals$PROF10[-c(1:2)]),
-  as.character(evals$PROF11[-c(1:2)]),
-  as.character(evals$PROF12[-c(1:2)]),
-  as.character(evals$PROF13[-c(1:2)]),
-  as.character(evals$PROF14[-c(1:2)]),
-  as.character(evals$PROF15[-c(1:2)]),
-  as.character(evals$PROF16[-c(1:2)]),
-  as.character(evals$PROF17[-c(1:2)]),
-  as.character(evals$PROF18[-c(1:2)]),
-  as.character(evals$PROF19[-c(1:2)]),
-  as.character(evals$PROF20[-c(1:2)]),
-  as.character(evals$PROF21[-c(1:2)])
-)
-
+prof.cols <- grep("PROF", colnames(evals))
+contacts <-
+  mapply(function (row.index)
+    mapply(function(col.index)
+      as.character(evals[row.index, col.index]), prof.cols),
+    seq(3, nrow(evals)))
 # removes empty contacts (not all classes have all 16 professor slots filled)
 contacts <- contacts[-(which(contacts == ""))]
 # removes duplicates
@@ -183,15 +179,15 @@ if (num.prof.cols > 0) {
       review <- as.character(review)
       
       prof.name <- as.character(evals[cur.eval, pcol])
-      if (length(prof.name) == 0 || is.na(prof.name) || prof.name == "")
+      if (length(prof.name) == 0 ||
+          is.na(prof.name) || prof.name == "")
         next()
       
       # check for duplicate professors in a course
       if (prof.name %in% previously.seen.profs) {
         error.log <-
-          c(error.log, 
-            paste(prof.name, as.character(evals[cur.eval, "CRN"]))
-            )
+          c(error.log,
+            paste(prof.name, as.character(evals[cur.eval, "CRN"])))
         next()
       }
       previously.seen.profs <- c(previously.seen.profs, prof.name)
@@ -233,6 +229,9 @@ if (num.prof.cols > 0) {
         ta.name <- as.character(evals[cur.eval, ta.col])
         ta.review <- as.character(evals[cur.eval, ta.review.col])
         
+        if (length(ta.name) < 1)
+          next(0)
+        
         if (ta.name != "") {
           if (ta.review != "") {
             reviewl[[ta.name]]$courses[[course.title]][[course.code]]$ratings <-
@@ -269,56 +268,6 @@ if (num.prof.cols > 0) {
 for (cur.file in 1:length(names(comment.files))) {
   cur.file.name <- names(comment.files[cur.file])
   write(comment.files[[cur.file.name]], file = cur.file.name)
-}
-
-# combines reports for professors with similar names
-similar <- c()
-max.name.diff <- 4
-
-for (i in 1:length(contacts)) {
-  for (j in 1:length(contacts)) {
-    fname <- contacts[i]
-    sname <- contacts[j]
-    
-    fname <- gsub(" ", "", fname, fixed = TRUE)
-    
-    sname <- gsub(" ", "", sname, fixed = TRUE)
-    
-    
-    if ((adist(fname, sname) < max.name.diff) &
-        (contacts[i] != contacts[j])) {
-      if ((length(which(similar == contacts[i])) == 0) &
-          (length(which(similar == contacts[j])) == 0)) {
-        similar <- rbind(similar, c(contacts[i], ">", contacts[j]))
-        
-        
-      }
-    }
-  }
-}
-
-if (length(similar) != 0) {
-  for (i in 1:nrow(similar)) {
-    fname <- similar[i, 1]
-    
-    sname <- similar[i, 3]
-    
-    reviewl[[fname]]$courses <-
-      c(reviewl[[fname]]$courses, reviewl[[sname]]$courses)
-    reviewl[[fname]]$ratings <-
-      c(reviewl[[fname]]$ratings, reviewl[[sname]]$ratings)
-    reviewl[[sname]] <- NULL
-  }
-  
-  # outputs text log so the user can check no names were merged unnecessarily
-  write.table(
-    similar,
-    "merged-names.txt",
-    col.names = FALSE,
-    row.names = FALSE,
-    quote = FALSE
-  )
-  
 }
 
 # outputs a file for each professor titled [Professor's name].csv in the format of (Course Code, Course Title, Reponse Rate, Num Evals, Course Size, Average, Frequencies)
@@ -389,8 +338,8 @@ for (prof in 1:length(reviewl)) {
       cur.course.title <- names(reviewl[[prof]]$courses[cur.course])
       
       cur.course.size <- course.sizes[[cur.course.code]]
-#      summary.course.sizes <- c(summary.course.sizes, cur.course.size)
-#      reviewl[[prof]]$total.students.taught <-  reviewl[[prof]]$total.students.taught + cur.course.size
+      #      summary.course.sizes <- c(summary.course.sizes, cur.course.size)
+      #      reviewl[[prof]]$total.students.taught <-  reviewl[[prof]]$total.students.taught + cur.course.size
       
       # use the scales package to represent the response rate as a percent
       reviewl[[prof]]$courses[[cur.course]][[cur.section]][["response.rate"]] <-
@@ -431,10 +380,10 @@ for (prof in 1:length(reviewl)) {
   
   prof.report.name <- paste(prof.name.formatted, ".csv", sep = "")
   
-  write.table(prof.report,
-              prof.report.name,
-              sep = ",",
-              row.names = FALSE)
+  # write.table(prof.report,
+  #             prof.report.name,
+  #             sep = ",",
+  #             row.names = FALSE)
   
   summary.ratings.prod <- sum(summary.ratings.prod)
   summary.num.ratings <- sum(summary.num.ratings)
@@ -445,8 +394,15 @@ for (prof in 1:length(reviewl)) {
   num.courses.taught <- length(summary.course.names)
   
   summary.line <-
-    c(prof.name, round(summary.average, digits=2), summary.num.ratings, total.students.taught, num.courses.taught, summary.course.names) 
-
+    c(
+      prof.name,
+      round(summary.average, digits = 2),
+      summary.num.ratings,
+      total.students.taught,
+      num.courses.taught,
+      summary.course.names
+    )
+  
   # summary.line <-
   #   c(prof.name, summary.average, summary.course.names)
   
@@ -483,20 +439,26 @@ col5.name <- "Total Number of Students"
 col6.name <- "Total Number of Courses Taught"
 col3.name <- paste("C", (1:(max.ncol - 5)), sep = "")
 
-colnames(summary.report) <- c(col1.name, col2.name, col4.name, col5.name, col6.name, col3.name)
+colnames(summary.report) <-
+  c(col1.name,
+    col2.name,
+    col4.name,
+    col5.name,
+    col6.name,
+    col3.name)
 
 # @ symbol used to ensure the report is listed first in the directory
-write.table(
-  summary.report,
-  paste("@Report", evals[3, "TERM.DESCRIPTION"], ".csv"),
-  sep = ",",
-  row.names = FALSE,
-  na = ""
-)
+# write.table(
+#   summary.report,
+#   paste("@Report", evals[3, "TERM.DESCRIPTION"], ".csv"),
+#   sep = ",",
+#   row.names = FALSE,
+#   na = ""
+# )
 
 if (length(error.log) > 0) {
   # outputs error log for duplicated professors by course
-  error.log <- unique(error.log)  
+  error.log <- unique(error.log)
   write.table(
     error.log,
     "error-log.txt",
@@ -520,3 +482,165 @@ if (num.ta.cols <= 0) {
 
 winDialog(type = c("ok"),
           "Your reports have been generated in the reports folder.")
+
+semester.summary <- create.semester.summary(reviewl)
+export.semester.summary <- function(semester.summary) {
+  report.col.names  <-
+    c("Professor", "Average", "Responses", "Section")
+  semester.report <- c()
+  for (course.index in seq(length(semester.summary))) {
+    course.summary <- semester.summary[[course.index]]
+    
+    course.name <- names(semester.summary)[[course.index]]
+    course.report <- c()
+    
+    sheet.number <- 1
+    wb <- createWorkbook("Admin")
+    addWorksheet(wb, sheet.number) # add modified report to a worksheet
+    
+    for (prof.index in seq(length(course.summary))) {
+      for (sec.index in seq(length(semester.summary[[course.index]][[prof.index]]))) {
+        average.eval <-
+          semester.summary[[course.index]][[prof.index]][[sec.index]][["average"]]
+        average.eval <- round(as.numeric(average.eval), digits = 2)
+        course.code <- names(semester.summary[[course.index]][[prof.index]])[[sec.index]] 
+        
+        row <-
+          c(
+            names(semester.summary[[course.index]])[[prof.index]],
+            average.eval,
+            paste(sum(semester.summary[[course.index]][[prof.index]][[sec.index]][["freqs"]]), "/", course.sizes[[course.code]], sep=""),
+            paste(names(semester.summary[[course.index]][[prof.index]])[[sec.index]], course.name)
+          )
+        
+        course.report <- rbind(course.report, row)
+        colnames(course.report)  <- report.col.names
+      }
+    }
+
+    course.code.array <- unlist(strsplit(course.code, "\\."))
+    subject.code <- course.code.array[1] 
+    course <- course.code.array[2] 
+    section <- course.code.array[3] 
+    course.respondents <- length(which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section))
+    
+    q1 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Description.of.course.objectives.and.assignments"]
+    q2 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Communication.of.ideas.and.information"]
+    q3 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Expression.of.expectation.for.performance.in.this.class"] 
+    q4 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Availability.to.assist.students.in.or.out.of.class"] 
+    q5 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Respect.and.concern.for.students"] 
+    q6 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Stimulation.of.interest.in.the.course"] 
+    q7 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Facilitation.of.learning"] 
+    q8 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Overall.assessment.of.course"] 
+    
+    
+    evals.to.average <- function(reviews) {
+      # counts frequencies of each possible review response
+      if (any(reviews == "Excellent") |
+          any(reviews == "Very Good") |
+          any(reviews == "Good") |
+          any(reviews == "Fair") | any(reviews == "Poor")) {
+        ecount <- length(which(reviews == "Excellent"))
+        
+        vgcount <- length(which(reviews == "Very Good"))
+        
+        gcount <- length(which(reviews == "Good"))
+        
+        fcount <- length(which(reviews == "Fair"))
+        
+        pcount <- length(which(reviews == "Poor"))
+      } else {
+        ecount <- length(which(reviews == "5"))
+        
+        vgcount <- length(which(reviews == "4"))
+        
+        gcount <- length(which(reviews == "3"))
+        
+        fcount <- length(which(reviews == "2"))
+        
+        pcount <- length(which(reviews == "1"))
+      }
+      
+      # vector of all rating counts
+      freqs <- c(ecount, vgcount, gcount, fcount, pcount)
+      
+      # sums frequencies of all reviews in the section, i.e., total number of ratings the professor received
+      num.ratings <- sum(freqs)
+      
+      # calculates a weighted average
+      ratings.prod <-
+        (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount)
+      
+      average <- ratings.prod / num.ratings
+      
+      return (average)
+    }
+    
+    q1.average <- round(evals.to.average(q1), digits = 2)
+    q2.average <- round(evals.to.average(q2), digits = 2)
+    q3.average <- round(evals.to.average(q3), digits = 2)
+    q4.average <- round(evals.to.average(q4), digits = 2)
+    q5.average <- round(evals.to.average(q5), digits = 2)
+    q6.average <- round(evals.to.average(q6), digits = 2)
+    q7.average <- round(evals.to.average(q7), digits = 2)
+    q8.average <- round(evals.to.average(q8), digits = 2)
+    
+    q.cols <- rbind(q1.average, q2.average, q3.average, q4.average, q5.average, q6.average, q7.average, q8.average)
+    
+    table <- rbind(
+     "Description of course objectives and assignments" ,
+     "Communication of ideas and information" ,
+     "Expression of expectation for performance in this class" ,
+     "Availability to assist students in or out of class" ,
+     "Respect and concern for students" ,
+     "Stimulation of interest in the course" ,
+     "Facilitation of learning" ,
+     "Overall assessment of course" 
+    )
+    
+    table.col.names <- c("Field", "Average", "", "")
+    table <- cbind(table, q.cols, "", "")
+    table <- rbind(table.col.names, table)
+    colnames(table) <- table.col.names
+    
+    course.report <- rbind(c(course.name, "", "", ""), c("Summer 2019 Evals", "", "", ""), "", table, "", report.col.names, course.report)
+    
+    firstStyle <- createStyle(fontSize = 18, fontColour = "#333333", halign = "center")
+    secondStyle <- createStyle(fontSize = 14, fontColour = "#333333", halign = "center")
+    tableStyle <- createStyle(fontSize = 12, fontColour = "#000000", textDecoration = c("bold", "underline"), halign = "left")
+    
+    addStyle(wb, sheet.number, firstStyle, rows = 1, cols = seq(1, nrow(course.report)), stack = TRUE)
+    addStyle(wb, sheet.number, secondStyle, rows = 2, cols = seq(1, nrow(course.report)), stack = TRUE)
+    addStyle(wb, sheet.number, tableStyle, rows = 4, cols = seq(1, nrow(course.report)), stack = TRUE)
+    
+    file.name <- make.names(course.name)
+    file.name <- gsub("\\.", " ", file.name)
+    file.name <-
+      gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", file.name, perl = TRUE)
+    
+    writeData(wb,
+              sheet = sheet.number,
+              course.report,
+              colNames = FALSE) # add the new worksheet to the workbook
+    # resizes column widths to fit contents
+    setColWidths(wb, sheet.number, cols = 1:4, widths = "auto")
+    # makes sure sheet fits on one printable page
+    pageSetup(wb,
+              sheet.number,
+              fitToWidth = TRUE,
+              fitToHeight = FALSE)
+    
+    saveWorkbook(wb, paste(file.name, ".xlsx", sep = ""), overwrite = TRUE) # writes a workbook containing all reports inputted
+    
+    semester.report <- rbind(semester.report, "", course.report)
+  }
+  
+  colnames(semester.report)  <- report.col.names
+  
+  write.csv(semester.report,
+            "semester-report.csv",
+            row.names = FALSE,
+            na = "")
+}
+
+export.semester.summary(semester.summary)

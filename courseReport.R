@@ -113,11 +113,12 @@ create.semester.summary <- function(reviewl) {
       function(course)
         course <- course[which(course != "")],
       mapply(
+        
         function(course)
           as.character(unlist(course)),
         mapply(function(course.title)
-#          evals[which(evals$TITLE == course.title), ][1, ][, prof.cols]
-          unique(evals[which(evals$TITLE == course.title), ][, prof.cols])
+          #          evals[which(evals$TITLE == course.title), ][1, ][, prof.cols]
+          unique(evals[which(evals$TITLE == course.title),][, prof.cols])
           , unique.titles, SIMPLIFY = F),
         SIMPLIFY = F
       ),
@@ -486,52 +487,106 @@ winDialog(type = c("ok"),
 semester.summary <- create.semester.summary(reviewl)
 export.semester.summary <- function(semester.summary) {
   report.col.names  <-
-    c("Professor", "Average", "Responses", "Section")
+    c("Professor", "Average", "Responses")
   semester.report <- c()
   for (course.index in seq(length(semester.summary))) {
     course.summary <- semester.summary[[course.index]]
-    
     course.name <- names(semester.summary)[[course.index]]
-    course.report <- c()
     
     sheet.number <- 1
     wb <- createWorkbook("Admin")
     addWorksheet(wb, sheet.number) # add modified report to a worksheet
     
+    course.report <- c()
     for (prof.index in seq(length(course.summary))) {
+      freqs <- c(0, 0, 0, 0, 0)
       for (sec.index in seq(length(semester.summary[[course.index]][[prof.index]]))) {
-        average.eval <-
-          semester.summary[[course.index]][[prof.index]][[sec.index]][["average"]]
-        average.eval <- round(as.numeric(average.eval), digits = 2)
-        course.code <- names(semester.summary[[course.index]][[prof.index]])[[sec.index]] 
-        
-        row <-
-          c(
-            names(semester.summary[[course.index]])[[prof.index]],
-            average.eval,
-            paste(sum(semester.summary[[course.index]][[prof.index]][[sec.index]][["freqs"]]), "/", course.sizes[[course.code]], sep=""),
-            paste(names(semester.summary[[course.index]][[prof.index]])[[sec.index]], course.name)
-          )
-        
-        course.report <- rbind(course.report, row)
-        colnames(course.report)  <- report.col.names
+        freqs <-
+          freqs + semester.summary[[course.index]][[prof.index]][[sec.index]][["freqs"]]
       }
+      
+      
+      # sums frequencies of all reviews in the section, i.e., total number of ratings the professor received
+      num.ratings <- sum(freqs)
+      
+      # calculates a weighted average
+      ratings.prod <-
+        (5 * freqs[1] + 4 * freqs[2] + 3 * freqs[3] + 2 * freqs[4] + 1 * freqs[5])
+      
+      average <- ratings.prod / num.ratings
+      average <- round(average, digits = 2)
+      row <-
+        c(
+          names(semester.summary[[course.index]])[[prof.index]],
+          average,
+          paste(num.ratings, "/", course.sizes[[course.code]], sep =
+                  "")
+#          Reduce(paste, names(semester.summary[[course.index]][[prof.index]]), course.name)
+        )
+      
+      course.report <- rbind(course.report, row)
     }
-
-    course.code.array <- unlist(strsplit(course.code, "\\."))
-    subject.code <- course.code.array[1] 
-    course <- course.code.array[2] 
-    section <- course.code.array[3] 
-    course.respondents <- length(which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section))
     
-    q1 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Description.of.course.objectives.and.assignments"]
-    q2 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Communication.of.ideas.and.information"]
-    q3 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Expression.of.expectation.for.performance.in.this.class"] 
-    q4 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Availability.to.assist.students.in.or.out.of.class"] 
-    q5 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Respect.and.concern.for.students"] 
-    q6 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Stimulation.of.interest.in.the.course"] 
-    q7 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Facilitation.of.learning"] 
-    q8 <- evals[which(evals$SUBJECT.CODE == subject.code & evals$COURSE.. == course & evals$SECTION.. == section), "Overall.assessment.of.course"] 
+    course.code.array <- unlist(strsplit(course.code, "\\."))
+    subject.code <- course.code.array[1]
+    course <- course.code.array[2]
+    section <- course.code.array[3]
+    course.respondents <-
+      length(
+        which(
+          evals$SUBJECT.CODE == subject.code &
+            evals$COURSE.. == course & evals$SECTION.. == section
+        )
+      )
+    
+    q1 <-
+      evals[which(
+        evals$SUBJECT.CODE == subject.code &
+          evals$COURSE.. == course &
+          evals$SECTION.. == section
+      ), "Description.of.course.objectives.and.assignments"]
+    q2 <-
+      evals[which(
+        evals$SUBJECT.CODE == subject.code &
+          evals$COURSE.. == course &
+          evals$SECTION.. == section
+      ), "Communication.of.ideas.and.information"]
+    q3 <-
+      evals[which(
+        evals$SUBJECT.CODE == subject.code &
+          evals$COURSE.. == course &
+          evals$SECTION.. == section
+      ), "Expression.of.expectation.for.performance.in.this.class"]
+    q4 <-
+      evals[which(
+        evals$SUBJECT.CODE == subject.code &
+          evals$COURSE.. == course &
+          evals$SECTION.. == section
+      ), "Availability.to.assist.students.in.or.out.of.class"]
+    q5 <-
+      evals[which(
+        evals$SUBJECT.CODE == subject.code &
+          evals$COURSE.. == course &
+          evals$SECTION.. == section
+      ), "Respect.and.concern.for.students"]
+    q6 <-
+      evals[which(
+        evals$SUBJECT.CODE == subject.code &
+          evals$COURSE.. == course &
+          evals$SECTION.. == section
+      ), "Stimulation.of.interest.in.the.course"]
+    q7 <-
+      evals[which(
+        evals$SUBJECT.CODE == subject.code &
+          evals$COURSE.. == course &
+          evals$SECTION.. == section
+      ), "Facilitation.of.learning"]
+    q8 <-
+      evals[which(
+        evals$SUBJECT.CODE == subject.code &
+          evals$COURSE.. == course &
+          evals$SECTION.. == section
+      ), "Overall.assessment.of.course"]
     
     
     evals.to.average <- function(reviews) {
@@ -585,17 +640,27 @@ export.semester.summary <- function(semester.summary) {
     q7.average <- round(evals.to.average(q7), digits = 2)
     q8.average <- round(evals.to.average(q8), digits = 2)
     
-    q.cols <- rbind(q1.average, q2.average, q3.average, q4.average, q5.average, q6.average, q7.average, q8.average)
+    q.cols <-
+      rbind(
+        q1.average,
+        q2.average,
+        q3.average,
+        q4.average,
+        q5.average,
+        q6.average,
+        q7.average,
+        q8.average
+      )
     
     table <- rbind(
-     "Description of course objectives and assignments" ,
-     "Communication of ideas and information" ,
-     "Expression of expectation for performance in this class" ,
-     "Availability to assist students in or out of class" ,
-     "Respect and concern for students" ,
-     "Stimulation of interest in the course" ,
-     "Facilitation of learning" ,
-     "Overall assessment of course" 
+      "Description of course objectives and assignments" ,
+      "Communication of ideas and information" ,
+      "Expression of expectation for performance in this class" ,
+      "Availability to assist students in or out of class" ,
+      "Respect and concern for students" ,
+      "Stimulation of interest in the course" ,
+      "Facilitation of learning" ,
+      "Overall assessment of course"
     )
     
     table.col.names <- c("Field", "Average", "", "")
@@ -603,21 +668,64 @@ export.semester.summary <- function(semester.summary) {
     table <- rbind(table.col.names, table)
     colnames(table) <- table.col.names
     
-    course.report <- rbind(c(course.name, "", "", ""), c("Summer 2019 Evals", "", "", ""), "", table, "", report.col.names, course.report)
+    course.report <-
+      rbind(
+        c(course.name, "", "", ""),
+        c("Summer 2019 Evals", "", "", ""),
+        "",
+        table,
+        "",
+        report.col.names,
+        course.report
+      )
     
-    firstStyle <- createStyle(fontSize = 18, fontColour = "#333333", halign = "center")
-    secondStyle <- createStyle(fontSize = 14, fontColour = "#333333", halign = "center")
-    tableStyle <- createStyle(fontSize = 12, fontColour = "#000000", textDecoration = c("bold", "underline"), halign = "left")
+    firstStyle <-
+      createStyle(fontSize = 18,
+                  fontColour = "#333333",
+                  halign = "center")
+    secondStyle <-
+      createStyle(fontSize = 14,
+                  fontColour = "#333333",
+                  halign = "center")
+    tableStyle <-
+      createStyle(
+        fontSize = 12,
+        fontColour = "#000000",
+        textDecoration = c("bold", "underline"),
+        halign = "left"
+      )
     
-    addStyle(wb, sheet.number, firstStyle, rows = 1, cols = seq(1, nrow(course.report)), stack = TRUE)
-    addStyle(wb, sheet.number, secondStyle, rows = 2, cols = seq(1, nrow(course.report)), stack = TRUE)
-    addStyle(wb, sheet.number, tableStyle, rows = 4, cols = seq(1, nrow(course.report)), stack = TRUE)
+    addStyle(
+      wb,
+      sheet.number,
+      firstStyle,
+      rows = 1,
+      cols = seq(1, nrow(course.report)),
+      stack = TRUE
+    )
+    addStyle(
+      wb,
+      sheet.number,
+      secondStyle,
+      rows = 2,
+      cols = seq(1, nrow(course.report)),
+      stack = TRUE
+    )
+    addStyle(
+      wb,
+      sheet.number,
+      tableStyle,
+      rows = 4,
+      cols = seq(1, nrow(course.report)),
+      stack = TRUE
+    )
     
     file.name <- make.names(course.name)
     file.name <- gsub("\\.", " ", file.name)
     file.name <-
       gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", file.name, perl = TRUE)
     
+#    course.report <- data.frame(course.report)
     writeData(wb,
               sheet = sheet.number,
               course.report,

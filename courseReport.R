@@ -113,7 +113,6 @@ create.semester.summary <- function(reviewl) {
       function(course)
         course <- course[which(course != "")],
       mapply(
-        
         function(course)
           as.character(unlist(course)),
         mapply(function(course.title)
@@ -492,6 +491,7 @@ export.semester.summary <- function(semester.summary) {
   for (course.index in seq(length(semester.summary))) {
     course.summary <- semester.summary[[course.index]]
     course.name <- names(semester.summary)[[course.index]]
+    course.codes <- c()
     
     sheet.number <- 1
     wb <- createWorkbook("Admin")
@@ -506,6 +506,9 @@ export.semester.summary <- function(semester.summary) {
       }
       
       
+      prof.course.codes <-
+        names(semester.summary[[course.index]][[prof.index]])
+      course.codes <- c(course.codes, prof.course.codes)
       # sums frequencies of all reviews in the section, i.e., total number of ratings the professor received
       num.ratings <- sum(freqs)
       
@@ -515,79 +518,137 @@ export.semester.summary <- function(semester.summary) {
       
       average <- ratings.prod / num.ratings
       average <- round(average, digits = 2)
+      average <- sprintf("%0.2f", average)
+        
+        course.size.from.sections <- function(course.codes) {
+          section.sizes <- c()
+          for (code in course.codes) {
+            section.size <-  course.sizes[[code]]
+            section.sizes <- c(section.sizes, section.size)
+          }
+          course.size <- sum(section.sizes)
+        }
+      
+      course.size <- course.size.from.sections(prof.course.codes)
+      
       row <-
         c(
           names(semester.summary[[course.index]])[[prof.index]],
           average,
-          paste(num.ratings, "/", course.sizes[[course.code]], sep =
+          paste(num.ratings, "/",
+                course.size, sep =
                   "")
-#          Reduce(paste, names(semester.summary[[course.index]][[prof.index]]), course.name)
         )
       
       course.report <- rbind(course.report, row)
     }
     
-    course.code.array <- unlist(strsplit(course.code, "\\."))
-    subject.code <- course.code.array[1]
-    course <- course.code.array[2]
-    section <- course.code.array[3]
-    course.respondents <-
-      length(
-        which(
-          evals$SUBJECT.CODE == subject.code &
-            evals$COURSE.. == course & evals$SECTION.. == section
-        )
-      )
+    course.codes <- sort(unique(course.codes))
     
-    q1 <-
-      evals[which(
-        evals$SUBJECT.CODE == subject.code &
-          evals$COURSE.. == course &
-          evals$SECTION.. == section
-      ), "Description.of.course.objectives.and.assignments"]
-    q2 <-
-      evals[which(
-        evals$SUBJECT.CODE == subject.code &
-          evals$COURSE.. == course &
-          evals$SECTION.. == section
-      ), "Communication.of.ideas.and.information"]
-    q3 <-
-      evals[which(
-        evals$SUBJECT.CODE == subject.code &
-          evals$COURSE.. == course &
-          evals$SECTION.. == section
-      ), "Expression.of.expectation.for.performance.in.this.class"]
-    q4 <-
-      evals[which(
-        evals$SUBJECT.CODE == subject.code &
-          evals$COURSE.. == course &
-          evals$SECTION.. == section
-      ), "Availability.to.assist.students.in.or.out.of.class"]
-    q5 <-
-      evals[which(
-        evals$SUBJECT.CODE == subject.code &
-          evals$COURSE.. == course &
-          evals$SECTION.. == section
-      ), "Respect.and.concern.for.students"]
-    q6 <-
-      evals[which(
-        evals$SUBJECT.CODE == subject.code &
-          evals$COURSE.. == course &
-          evals$SECTION.. == section
-      ), "Stimulation.of.interest.in.the.course"]
-    q7 <-
-      evals[which(
-        evals$SUBJECT.CODE == subject.code &
-          evals$COURSE.. == course &
-          evals$SECTION.. == section
-      ), "Facilitation.of.learning"]
-    q8 <-
-      evals[which(
-        evals$SUBJECT.CODE == subject.code &
-          evals$COURSE.. == course &
-          evals$SECTION.. == section
-      ), "Overall.assessment.of.course"]
     
+    
+    
+    
+    # THERE ARE CLASS LIKE GMS7930 THAT SHARE SUBJECTS AND COURSE LABELS!!!!!!
+    
+    course.respondents <- c()
+    q1 <- c()
+    q2 <- c()
+    q3 <- c()
+    q4 <- c()
+    q5 <- c()
+    q6 <- c()
+    q7 <- c()
+    q8 <- c()
+    
+    course.comments <- c()
+    for (i in seq(length(course.codes))) {
+      course.code <- course.codes[i]
+      
+      course.code.array <- unlist(strsplit(course.code, "\\."))
+      subject.code <- course.code.array[1]
+      course <- course.code.array[2]
+      section <- course.code.array[3]
+      
+      course.respondents <- c(course.respondents,
+                              length(
+                                which(
+                                  evals$SUBJECT.CODE == subject.code &
+                                    evals$COURSE.. == course
+                                  & evals$SECTION.. == section
+                                )
+                              ))
+      
+      q1 <- c(q1,
+              evals[which(
+                evals$SUBJECT.CODE == subject.code &
+                  evals$COURSE.. == course &
+                  evals$SECTION.. == section
+              ), "Description.of.course.objectives.and.assignments"])
+      q2 <- c(q2,
+              evals[which(
+                evals$SUBJECT.CODE == subject.code &
+                  evals$COURSE.. == course &
+                  evals$SECTION.. == section
+              ), "Communication.of.ideas.and.information"])
+      q3 <- c(q3,
+              evals[which(
+                evals$SUBJECT.CODE == subject.code &
+                  evals$COURSE.. == course &
+                  evals$SECTION.. == section
+              ), "Expression.of.expectation.for.performance.in.this.class"])
+      q4 <- c(q4,
+              evals[which(
+                evals$SUBJECT.CODE == subject.code &
+                  evals$COURSE.. == course &
+                  evals$SECTION.. == section
+              ), "Availability.to.assist.students.in.or.out.of.class"])
+      q5 <- c(q5,
+              evals[which(
+                evals$SUBJECT.CODE == subject.code &
+                  evals$COURSE.. == course &
+                  evals$SECTION.. == section
+              ), "Respect.and.concern.for.students"])
+      q6 <- c(q6,
+              evals[which(
+                evals$SUBJECT.CODE == subject.code &
+                  evals$COURSE.. == course &
+                  evals$SECTION.. == section
+              ), "Stimulation.of.interest.in.the.course"])
+      q7 <- c(q7,
+              evals[which(
+                evals$SUBJECT.CODE == subject.code &
+                  evals$COURSE.. == course &
+                  evals$SECTION.. == section
+              ), "Facilitation.of.learning"])
+      q8 <- c(q8,
+              evals[which(
+                evals$SUBJECT.CODE == subject.code &
+                  evals$COURSE.. == course &
+                  evals$SECTION.. == section
+              ), "Overall.assessment.of.course"])
+      
+      
+      current.comments <- evals[which(
+        evals$SUBJECT.CODE == subject.code &
+          evals$COURSE.. == course
+        & evals$SECTION.. == section
+      ), "W22"]
+      
+      if (all(nchar(current.comments) == 0))
+        next()
+      
+      
+      current.comments <- current.comments[which(nchar(current.comments) != 0)]
+      current.comments <- paste(">>> ", current.comments, sep = "")
+      current.comments <-
+         paste(strwrap(current.comments, 90), collapse = "\n")
+      
+      course.comments <-
+        c(course.comments, "", current.comments)     
+    }
+    
+    course.respondents <- sum(course.respondents)
     
     evals.to.average <- function(reviews) {
       # counts frequencies of each possible review response
@@ -663,15 +724,49 @@ export.semester.summary <- function(semester.summary) {
       "Overall assessment of course"
     )
     
-    table.col.names <- c("Field", "Average", "", "")
-    table <- cbind(table, q.cols, "", "")
+    #    table.col.names <- c("Field", "Average", "")
+    course.size <- course.size.from.sections(course.codes)
+    response.rate <- percent(course.respondents / course.size, 2)
+    response.rate.heading <-
+      paste(course.respondents, "/", course.size, sep = "")
+    response.rate.heading <-
+      paste(response.rate.heading,
+            " = ",
+            response.rate,
+            " response rate",
+            sep = "")
+    table.col.names <- c("Field", "Average", "Responses")
+    
+    
+    q.responses <-
+      rbind(
+        length(q1),
+        length(q2),
+        length(q3),
+        length(q4),
+        length(q5),
+        length(q6),
+        length(q7),
+        length(q8)
+      )
+    
+    
+    table <- cbind(table, q.cols, q.responses)
     table <- rbind(table.col.names, table)
     colnames(table) <- table.col.names
     
+    course.codes.heading <-
+      unlist(sapply(sapply(course.codes, function(x)
+        strsplit(x, "\\.")), function (y)
+          paste(paste(y[1], y[2], sep = ""), sprintf("%03d", as.numeric(y[3])), sep = "."), simplify = F))
+    course.codes.heading <- Reduce(paste, course.codes.heading)
+    
     course.report <-
       rbind(
-        c(course.name, "", "", ""),
-        c("Summer 2019 Evals", "", "", ""),
+        c(course.name, "", ""),
+        c("Summer 2019 Evals", "", ""),
+        c(course.codes.heading, "", ""),
+        c(response.rate.heading, "", ""),
         "",
         table,
         "",
@@ -694,6 +789,10 @@ export.semester.summary <- function(semester.summary) {
         textDecoration = c("bold", "underline"),
         halign = "left"
       )
+    textStyle<-
+      createStyle(fontSize = 12,
+                  fontColour = "#333333",
+                  wrapText = TRUE)
     
     addStyle(
       wb,
@@ -714,9 +813,44 @@ export.semester.summary <- function(semester.summary) {
     addStyle(
       wb,
       sheet.number,
-      tableStyle,
+      secondStyle,
+      rows = 3,
+      cols = seq(1, nrow(course.report)),
+      stack = TRUE
+    )
+    addStyle(
+      wb,
+      sheet.number,
+      secondStyle,
       rows = 4,
       cols = seq(1, nrow(course.report)),
+      stack = TRUE
+    )
+    addStyle(
+      wb,
+      sheet.number,
+      tableStyle,
+      rows = 6,
+      cols = seq(1, nrow(course.report)),
+      stack = TRUE
+    )
+    addStyle(
+      wb,
+      sheet.number,
+      tableStyle,
+      rows = 16,
+      cols = seq(1, nrow(course.report)),
+      stack = TRUE
+    )
+    
+    
+    addWorksheet(wb, 2) # add modified report to a worksheet
+    addStyle(
+      wb,
+      2,
+      textStyle,
+      rows = seq(1, nrow(course.report)),
+      cols = 1,
       stack = TRUE
     )
     
@@ -725,18 +859,33 @@ export.semester.summary <- function(semester.summary) {
     file.name <-
       gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", file.name, perl = TRUE)
     
-#    course.report <- data.frame(course.report)
+    #    course.report <- data.frame(course.report)
     writeData(wb,
               sheet = sheet.number,
               course.report,
               colNames = FALSE) # add the new worksheet to the workbook
+    
+    
+    writeData(wb,
+              sheet = 2,
+              course.comments,
+              colNames = FALSE) # add the new worksheet to the workbook
+    
+    
     # resizes column widths to fit contents
-    setColWidths(wb, sheet.number, cols = 1:4, widths = "auto")
+#    setColWidths(wb, sheet.number, cols = 1:4, widths = "auto")
+    setColWidths(wb, sheet.number, cols = 1, widths = 70)
+    setColWidths(wb, 2, cols = 1, widths = 50)
     # makes sure sheet fits on one printable page
     pageSetup(wb,
               sheet.number,
               fitToWidth = TRUE,
               fitToHeight = FALSE)
+    
+    mergeCells(wb, 1, cols = 1:3, rows = 1)
+    mergeCells(wb, 1, cols = 1:3, rows = 2)
+    mergeCells(wb, 1, cols = 1:3, rows = 3)
+    mergeCells(wb, 1, cols = 1:3, rows = 4)
     
     saveWorkbook(wb, paste(file.name, ".xlsx", sep = ""), overwrite = TRUE) # writes a workbook containing all reports inputted
     

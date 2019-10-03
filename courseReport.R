@@ -643,8 +643,8 @@ export.semester.summary <- function(semester.summary) {
         current.comments[which(nchar(current.comments) != 0)]
       current.comments <-
         paste(">>> ", current.comments, "\n", "\n", sep = "")
-      current.comments <-
-        paste(strwrap(current.comments, 80), collapse = "\n")
+      # current.comments <-
+      #   paste(strwrap(current.comments, 80), collapse = "\n")
       
       course.comments <-
         c(course.comments, current.comments)
@@ -982,6 +982,7 @@ export.semester.summary <- function(semester.summary) {
               course.comments,
               colNames = FALSE) # add the new worksheet to the workbook
        
+    setColWidths(wb, 2, cols = 1, widths = 70)
   }
     file.name <- make.names(course.name)
     file.name <- gsub("\\.", " ", file.name)
@@ -998,9 +999,8 @@ export.semester.summary <- function(semester.summary) {
 
     
     # resizes column widths to fit contents
-    #    setColWidths(wb, sheet.number, cols = 1:4, widths = "auto")
-    setColWidths(wb, sheet.number, cols = 1, widths = 70)
-    setColWidths(wb, 2, cols = 1, widths = 50)
+    setColWidths(wb, sheet.number, cols = 1:4, widths = "auto")
+    # setColWidths(wb, sheet.number, cols = 1, widths = 70)
     # makes sure sheet fits on one printable page
     pageSetup(wb,
               sheet.number,

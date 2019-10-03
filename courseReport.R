@@ -519,15 +519,15 @@ export.semester.summary <- function(semester.summary) {
       average <- ratings.prod / num.ratings
       average <- round(average, digits = 2)
       average <- sprintf("%0.2f", average)
-        
-        course.size.from.sections <- function(course.codes) {
-          section.sizes <- c()
-          for (code in course.codes) {
-            section.size <-  course.sizes[[code]]
-            section.sizes <- c(section.sizes, section.size)
-          }
-          course.size <- sum(section.sizes)
+      
+      course.size.from.sections <- function(course.codes) {
+        section.sizes <- c()
+        for (code in course.codes) {
+          section.size <-  course.sizes[[code]]
+          section.sizes <- c(section.sizes, section.size)
         }
+        course.size <- sum(section.sizes)
+      }
       
       course.size <- course.size.from.sections(prof.course.codes)
       
@@ -639,13 +639,24 @@ export.semester.summary <- function(semester.summary) {
         next()
       
       
-      current.comments <- current.comments[which(nchar(current.comments) != 0)]
-      current.comments <- paste(">>> ", current.comments, sep = "")
       current.comments <-
-         paste(strwrap(current.comments, 90), collapse = "\n")
+        current.comments[which(nchar(current.comments) != 0)]
+      current.comments <-
+        paste(">>> ", current.comments, "\n", "\n", sep = "")
+      current.comments <-
+        paste(strwrap(current.comments, 80), collapse = "\n")
       
       course.comments <-
-        c(course.comments, "", current.comments)     
+        c(course.comments, current.comments)
+      
+      # if (length(course.comments) != 0) {
+      #   course.comments <-
+      #     c(course.comments, "", "", current.comments)
+      # }
+      # else {
+      #   course.comments <-
+      #     c(course.comments, current.comments)
+      # }
     }
     
     course.respondents <- sum(course.respondents)
@@ -786,20 +797,43 @@ export.semester.summary <- function(semester.summary) {
       createStyle(
         fontSize = 12,
         fontColour = "#000000",
-        textDecoration = c("bold", "underline"),
+        border = "bottom",
+        borderColour = "#000000",
+        borderStyle = "thick",
+        textDecoration = "bold",
         halign = "left"
       )
-    textStyle<-
+    columnStyle <-
+      createStyle(
+        fontSize = 12,
+        fontColour = "#000000",
+        border = "left",
+        borderColour = "#333333",
+        borderStyle = "thin",
+        halign = "left"
+      )
+     rowStyle <-
+      createStyle(
+        fontSize = 12,
+        fontColour = "#000000",
+        border = "bottom",
+        borderColour = "#333333",
+        borderStyle = "thin",
+        halign = "left"
+      )
+       
+    textStyle <-
       createStyle(fontSize = 12,
-                  fontColour = "#333333",
+                  fontColour = "#000000",
                   wrapText = TRUE)
     
+    # page header style
     addStyle(
       wb,
       sheet.number,
       firstStyle,
       rows = 1,
-      cols = seq(1, nrow(course.report)),
+      cols = 1:4,
       stack = TRUE
     )
     addStyle(
@@ -807,7 +841,7 @@ export.semester.summary <- function(semester.summary) {
       sheet.number,
       secondStyle,
       rows = 2,
-      cols = seq(1, nrow(course.report)),
+      cols = 1:4,
       stack = TRUE
     )
     addStyle(
@@ -815,7 +849,7 @@ export.semester.summary <- function(semester.summary) {
       sheet.number,
       secondStyle,
       rows = 3,
-      cols = seq(1, nrow(course.report)),
+      cols = 1:4,
       stack = TRUE
     )
     addStyle(
@@ -823,27 +857,117 @@ export.semester.summary <- function(semester.summary) {
       sheet.number,
       secondStyle,
       rows = 4,
-      cols = seq(1, nrow(course.report)),
+      cols = 1:4,
       stack = TRUE
     )
-    addStyle(
+    
+    # table headings
+      addStyle(
       wb,
       sheet.number,
       tableStyle,
       rows = 6,
-      cols = seq(1, nrow(course.report)),
+      cols = 1:3,
       stack = TRUE
     )
+    
     addStyle(
       wb,
       sheet.number,
       tableStyle,
       rows = 16,
-      cols = seq(1, nrow(course.report)),
+      cols = 1:3,
+      stack = TRUE
+    )
+
+    # bottom borders for each field
+     addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 7:14,
+      cols = 1,
+      stack = TRUE
+    )
+      addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 7:14,
+      cols = 2,
+      stack = TRUE
+    )
+      addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 7:14,
+      cols = 3,
+      stack = TRUE
+    )
+      
+      # bottom borders for each professor
+     addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 17:nrow(course.report),
+      cols = 1,
+      stack = TRUE
+    )
+      addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 17:nrow(course.report),
+      cols = 2,
+      stack = TRUE
+    )
+       addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 17:nrow(course.report),
+      cols = 3,
+      stack = TRUE
+    )
+        
+      addStyle(
+      wb,
+      sheet.number,
+      columnStyle,
+      rows = 16:nrow(course.report),
+      cols = 2,
+      stack = TRUE
+    )
+       addStyle(
+      wb,
+      sheet.number,
+      columnStyle,
+      rows = 16:nrow(course.report),
+      cols = 3,
+      stack = TRUE
+    )
+       
+       
+    addStyle(
+      wb,
+      sheet.number,
+      columnStyle,
+      rows = 6:14,
+      cols = 2,
+      stack = TRUE
+    )
+    addStyle(
+      wb,
+      sheet.number,
+      columnStyle,
+      rows = 6:14,
+      cols = 3,
       stack = TRUE
     )
     
-    
+    if (length(course.comments) != 0) {
     addWorksheet(wb, 2) # add modified report to a worksheet
     addStyle(
       wb,
@@ -853,7 +977,12 @@ export.semester.summary <- function(semester.summary) {
       cols = 1,
       stack = TRUE
     )
-    
+     writeData(wb,
+              sheet = 2,
+              course.comments,
+              colNames = FALSE) # add the new worksheet to the workbook
+       
+  }
     file.name <- make.names(course.name)
     file.name <- gsub("\\.", " ", file.name)
     file.name <-
@@ -866,14 +995,10 @@ export.semester.summary <- function(semester.summary) {
               colNames = FALSE) # add the new worksheet to the workbook
     
     
-    writeData(wb,
-              sheet = 2,
-              course.comments,
-              colNames = FALSE) # add the new worksheet to the workbook
-    
+
     
     # resizes column widths to fit contents
-#    setColWidths(wb, sheet.number, cols = 1:4, widths = "auto")
+    #    setColWidths(wb, sheet.number, cols = 1:4, widths = "auto")
     setColWidths(wb, sheet.number, cols = 1, widths = 70)
     setColWidths(wb, 2, cols = 1, widths = 50)
     # makes sure sheet fits on one printable page
@@ -882,10 +1007,10 @@ export.semester.summary <- function(semester.summary) {
               fitToWidth = TRUE,
               fitToHeight = FALSE)
     
-    mergeCells(wb, 1, cols = 1:3, rows = 1)
-    mergeCells(wb, 1, cols = 1:3, rows = 2)
-    mergeCells(wb, 1, cols = 1:3, rows = 3)
-    mergeCells(wb, 1, cols = 1:3, rows = 4)
+    mergeCells(wb, 1, cols = 1:4, rows = 1)
+    mergeCells(wb, 1, cols = 1:4, rows = 2)
+    mergeCells(wb, 1, cols = 1:4, rows = 3)
+    mergeCells(wb, 1, cols = 1:4, rows = 4)
     
     saveWorkbook(wb, paste(file.name, ".xlsx", sep = ""), overwrite = TRUE) # writes a workbook containing all reports inputted
     

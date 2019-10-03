@@ -643,6 +643,8 @@ export.semester.summary <- function(semester.summary) {
         current.comments[which(nchar(current.comments) != 0)]
       current.comments <-
         paste(">>> ", current.comments, "\n", "\n", sep = "")
+      
+      Encoding(current.comments) <- "UTF-8"
       # current.comments <-
       #   paste(strwrap(current.comments, 80), collapse = "\n")
       

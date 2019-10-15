@@ -472,17 +472,6 @@ if (length(error.log) > 0) {
 }
 
 
-# reminds user that the num.ta.cols variable was not configured
-if (num.ta.cols <= 0) {
-  winDialog(
-    type = c("ok"),
-    "Variable num.ta.cols was <= 0, so no TA reports were generated. Update script with the correct number if this is an error."
-  )
-}
-
-winDialog(type = c("ok"),
-          "Your reports have been generated in the reports folder.")
-
 semester.summary <- create.semester.summary(reviewl)
 export.semester.summary <- function(semester.summary) {
   report.col.names  <-
@@ -570,22 +559,22 @@ export.semester.summary <- function(semester.summary) {
       course <- course.code.array[2]
       section <- course.code.array[3]
       
-      course.respondents <- c(course.respondents,
-                              length(
-                                which(
-                                  evals$SUBJECT.CODE == subject.code &
-                                    evals$COURSE.. == course
-                                  & evals$SECTION.. == section
-                                )
-                              ))
       
-      q1 <- c(q1,
-              evals[which(
-                evals$SUBJECT.CODE == subject.code &
-                  evals$COURSE.. == course &
-                  evals$SECTION.. == section
+      respondents <- which(
+        evals$SUBJECT.CODE == subject.code &
+          evals$COURSE.. == course
+        & evals$SECTION.. == section
+      )
+      course.respondents <- c(course.respondents,
+                              respondents)
+      
+      q1 <- c(
+        q1,
+        evals[which(evals$SUBJECT.CODE == subject.code &
+                      evals$COURSE.. == course &
+                      evals$SECTION.. == section
               ), "Description.of.course.objectives.and.assignments"])
-      q2 <- c(q2,
+      q2 <- c(q2, 
               evals[which(
                 evals$SUBJECT.CODE == subject.code &
                   evals$COURSE.. == course &
@@ -661,7 +650,18 @@ export.semester.summary <- function(semester.summary) {
       # }
     }
     
-    course.respondents <- sum(course.respondents)
+    course.respondents <- course.respondents[course.respondents != ""]
+
+    q1 <- q1[q1 != ""]
+    q2 <- q2[q2 != ""]
+    q3 <- q3[q3 != ""]
+    q4 <- q4[q4 != ""]
+    q5 <- q5[q5 != ""]
+    q6 <- q6[q6 != ""]
+    q7 <- q7[q7 != ""]
+    q8 <- q8[q8 != ""]
+    
+    course.respondents <- length(course.respondents)
     
     evals.to.average <- function(reviews) {
       # counts frequencies of each possible review response
@@ -701,18 +701,20 @@ export.semester.summary <- function(semester.summary) {
         (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount)
       
       average <- ratings.prod / num.ratings
+      average <- round(average, digits = 2)
+      average <- sprintf("%0.2f", average)
       
       return (average)
     }
     
-    q1.average <- round(evals.to.average(q1), digits = 2)
-    q2.average <- round(evals.to.average(q2), digits = 2)
-    q3.average <- round(evals.to.average(q3), digits = 2)
-    q4.average <- round(evals.to.average(q4), digits = 2)
-    q5.average <- round(evals.to.average(q5), digits = 2)
-    q6.average <- round(evals.to.average(q6), digits = 2)
-    q7.average <- round(evals.to.average(q7), digits = 2)
-    q8.average <- round(evals.to.average(q8), digits = 2)
+    q1.average <- evals.to.average(q1)
+    q2.average <- evals.to.average(q2)
+    q3.average <- evals.to.average(q3)
+    q4.average <- evals.to.average(q4)
+    q5.average <- evals.to.average(q5)
+    q6.average <- evals.to.average(q6)
+    q7.average <- evals.to.average(q7)
+    q8.average <- evals.to.average(q8)
     
     q.cols <-
       rbind(
@@ -725,6 +727,17 @@ export.semester.summary <- function(semester.summary) {
         q7.average,
         q8.average
       )
+    
+    course.respondents = max(
+      length(q1),
+      length(q2),
+      length(q3),
+      length(q4),
+      length(q5),
+      length(q6),
+      length(q7),
+      length(q8)
+    )
     
     table <- rbind(
       "Description of course objectives and assignments" ,
@@ -763,6 +776,8 @@ export.semester.summary <- function(semester.summary) {
         length(q8)
       )
     
+
+    
     
     table <- cbind(table, q.cols, q.responses)
     table <- rbind(table.col.names, table)
@@ -774,6 +789,11 @@ export.semester.summary <- function(semester.summary) {
           paste(paste(y[1], y[2], sep = ""), sprintf("%03d", as.numeric(y[3])), sep = "."), simplify = F))
     course.codes.heading <- Reduce(paste, course.codes.heading)
     
+    # mapply(function(s) paste(strwrap(s, 10), collapse="\r\n"), course.comments)
+    course.comments <- c("", course.comments)
+    course.comments <- cbind(course.comments, rep("", length(course.comments)))
+    course.comments <- cbind(course.comments, rep("", length(course.comments)))
+    num.profs <- nrow(course.report)
     course.report <-
       rbind(
         c(course.name, "", ""),
@@ -784,7 +804,10 @@ export.semester.summary <- function(semester.summary) {
         table,
         "",
         report.col.names,
-        course.report
+        course.report,
+        "",
+        c("Comments", "", ""),
+        course.comments
       )
     
     firstStyle <-
@@ -881,7 +904,15 @@ export.semester.summary <- function(semester.summary) {
       cols = 1:3,
       stack = TRUE
     )
-
+    addStyle(
+      wb,
+      sheet.number,
+      tableStyle,
+      rows = (16 + num.profs + 2),
+      cols = 1:3,
+      stack = TRUE
+    )
+    
     # bottom borders for each field
      addStyle(
       wb,
@@ -913,7 +944,7 @@ export.semester.summary <- function(semester.summary) {
       wb,
       sheet.number,
       rowStyle,
-      rows = 17:nrow(course.report),
+      rows = 17:(16 + num.profs),
       cols = 1,
       stack = TRUE
     )
@@ -921,7 +952,7 @@ export.semester.summary <- function(semester.summary) {
       wb,
       sheet.number,
       rowStyle,
-      rows = 17:nrow(course.report),
+      rows = 17:(16 + num.profs),
       cols = 2,
       stack = TRUE
     )
@@ -929,7 +960,7 @@ export.semester.summary <- function(semester.summary) {
       wb,
       sheet.number,
       rowStyle,
-      rows = 17:nrow(course.report),
+      rows = 17:(16 + num.profs),
       cols = 3,
       stack = TRUE
     )
@@ -938,7 +969,7 @@ export.semester.summary <- function(semester.summary) {
       wb,
       sheet.number,
       columnStyle,
-      rows = 16:nrow(course.report),
+      rows = 16:(16 + num.profs),
       cols = 2,
       stack = TRUE
     )
@@ -946,7 +977,7 @@ export.semester.summary <- function(semester.summary) {
       wb,
       sheet.number,
       columnStyle,
-      rows = 16:nrow(course.report),
+      rows = 16:(16 + num.profs),
       cols = 3,
       stack = TRUE
     )
@@ -968,6 +999,17 @@ export.semester.summary <- function(semester.summary) {
       cols = 3,
       stack = TRUE
     )
+    
+    addStyle(
+      wb,
+      sheet.number,
+      textStyle,
+      rows = seq(16 + num.profs + 3 , nrow(course.report)),
+      cols = 1,
+      stack = TRUE,
+    )
+    
+    
     
     if (length(course.comments) != 0) {
     addWorksheet(wb, 2) # add modified report to a worksheet
@@ -1001,8 +1043,8 @@ export.semester.summary <- function(semester.summary) {
 
     
     # resizes column widths to fit contents
-    setColWidths(wb, sheet.number, cols = 1:4, widths = "auto")
-    # setColWidths(wb, sheet.number, cols = 1, widths = 70)
+    #setColWidths(wb, sheet.number, cols = 1:4, widths = "auto")
+     setColWidths(wb, sheet.number, cols = 1, widths = 70)
     # makes sure sheet fits on one printable page
     pageSetup(wb,
               sheet.number,
@@ -1028,3 +1070,14 @@ export.semester.summary <- function(semester.summary) {
 }
 
 export.semester.summary(semester.summary)
+
+# reminds user that the num.ta.cols variable was not configured
+if (num.ta.cols <= 0) {
+  winDialog(
+    type = c("ok"),
+    "Variable num.ta.cols was <= 0, so no TA reports were generated. Update script with the correct number if this is an error."
+  )
+}
+
+winDialog(type = c("ok"),
+          "Your reports have been generated in the reports folder.")

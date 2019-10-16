@@ -7,6 +7,77 @@
 # qualtrics.api <- source_python("src/qualtrics_api.py")
 # # survey data will be saved to the same directory as this script
 # download_survey("API_TOKEN", "SURVEY_ID", "DATACENTER_ID")
+get_worksheet_entries <- function(wb, sheet) {
+  # get worksheet data
+  dat <- wb$worksheets[[sheet]]$sheet_data
+  # get vector of entries
+  val <- dat$v
+  # get boolean vector of text entries
+  typ <- (dat$t == 1) & !is.na(dat$t)
+  # get text entry strings
+  str <- unlist(wb$sharedStrings[as.integer(val)[typ] + 1])
+  # remove xml tags
+  str <- gsub("<.*?>", "", str)
+  # write strings to vector of entries
+  val[typ] <- str
+  # return vector of entries
+  val
+}
+
+auto_heights <-
+  function(wb,
+           sheet,
+           selected,
+           fontsize = NULL,
+           factor = 1.0,
+           base_height = 15,
+           extra_height = 12) {
+    # get base font size
+    if (is.null(fontsize)) {
+      fontsize <- as.integer(openxlsx::getBaseFont(wb)$size$val)
+    }
+    # set factor to adjust font width (empiricially found scale factor 4 here)
+    factor <- 4 * factor / fontsize
+    # get worksheet data
+    dat <- wb$worksheets[[sheet]]$sheet_data
+    # get columns widths
+    colWidths <- wb$colWidths[[sheet]]
+    # select fixed (non-auto) and visible (non-hidden) columns only
+    specified <-
+      (colWidths != "auto") & (attr(colWidths, "hidden") == "0")
+    # return default row heights if no column widths are fixed
+    if (length(specified) == 0) {
+      message("No column widths specified, returning default row heights.")
+      cols <- integer(0)
+      heights <- rep(base_height, length(selected))
+      return(list(cols, heights))
+    }
+    # get fixed column indices
+    cols <- as.integer(names(specified)[specified])
+    # get fixed column widths
+    widths <- as.numeric(colWidths[specified])
+    # get all worksheet entries
+    val <- get_worksheet_entries(wb, sheet)
+    # compute optimal height per selected row
+    heights <- sapply(selected, function(row) {
+      # select entries in given row and columns of fixed widths
+      index <- (dat$rows == row) & (dat$cols %in% cols)
+      # remove line break characters
+      chr <- gsub("\\r|\\n", "", val[index])
+      # measure width of entry (in pixels)
+      wdt <- strwidth(chr, unit = "in") * 20 / 1.43 # 20 px = 1.43 in
+      # compute optimal height
+      if (length(wdt) == 0) {
+        base_height
+      } else {
+        base_height + extra_height * as.integer(max(wdt / widths * factor))
+      }
+    })
+    # return list of indices of columns with fixed widths and optimal row heights
+    list(cols, heights)
+  }
+
+
 
 if (!require("openxlsx", character.only = T, quietly = T)) {
   install.packages("openxlsx")
@@ -48,7 +119,7 @@ if ("CRN" %in% names(student.contacts) == TRUE) {
   DT <- unique(unique(DT, by = "CRN"), by = "UID.")
   for (course.ctr in 1:nrow(DT)) {
     profs.indices <- which(grepl("PROF", names(DT)))
-    row <- DT[course.ctr, ]
+    row <- DT[course.ctr,]
     
     profs <- c()
     dups <- c()
@@ -117,7 +188,7 @@ create.semester.summary <- function(reviewl) {
           as.character(unlist(course)),
         mapply(function(course.title)
           #          evals[which(evals$TITLE == course.title), ][1, ][, prof.cols]
-          unique(evals[which(evals$TITLE == course.title), ][, prof.cols])
+          unique(evals[which(evals$TITLE == course.title),][, prof.cols])
           , unique.titles, SIMPLIFY = F),
         SIMPLIFY = F
       ),
@@ -466,7 +537,6 @@ semester.summary <- create.semester.summary(reviewl)
 export.semester.summary <- function(semester.summary) {
   report.col.names  <-
     c("Professor", "Average", "Responses")
-  semester.report <- c()
   for (course.index in seq(length(semester.summary))) {
     course.summary <- semester.summary[[course.index]]
     course.name <- names(semester.summary)[[course.index]]
@@ -614,7 +684,7 @@ export.semester.summary <- function(semester.summary) {
         c(course.comments, current.comments)
     }
     
-    course.comments <- c("", course.comments)
+    #    course.comments <- c("", course.comments)
     course.respondents <-
       course.respondents[course.respondents != ""]
     
@@ -985,6 +1055,8 @@ export.semester.summary <- function(semester.summary) {
     # resizes column widths to fit contents
     #setColWidths(wb, sheet.number, cols = 1:4, widths = "auto")
     setColWidths(wb, sheet.number, cols = 1, widths = 70)
+    #    setRowHeights(wb, sheet.number, rows = seq(16 + num.profs + 3, nrow(course.report)), heights = "auto")
+    #    setRowHeights(wb, sheet.number, rows = seq(16 + num.profs + 3, nrow(course.report)), heights = 50)
     # makes sure sheet fits on one printable page
     pageSetup(wb,
               sheet.number,
@@ -996,12 +1068,16 @@ export.semester.summary <- function(semester.summary) {
     mergeCells(wb, 1, cols = 1:4, rows = 3)
     mergeCells(wb, 1, cols = 1:4, rows = 4)
     
-    saveWorkbook(wb, paste(file.name, ".xlsx", sep = ""), overwrite = TRUE) # writes a workbook containing all reports inputted
+    auto_heights(
+      wb,
+      sheet.number,
+      seq(16 + num.profs + 3, nrow(course.report)),
+      base_height = 150,
+      extra_height = 20
+    )
     
-    semester.report <- rbind(semester.report, "", course.report)
+    saveWorkbook(wb, paste(file.name, ".xlsx", sep = ""), overwrite = TRUE) # writes a workbook containing all reports inputted
   }
-  
-  colnames(semester.report)  <- report.col.names
 }
 
 export.semester.summary(semester.summary)

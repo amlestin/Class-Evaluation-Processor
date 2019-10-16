@@ -8,6 +8,7 @@
 # # survey data will be saved to the same directory as this script
 # download_survey("API_TOKEN", "SURVEY_ID", "DATACENTER_ID")
 get_worksheet_entries <- function(wb, sheet) {
+  #  https://github.com/awalker89/openxlsx/pull/382/commits/7e9cfd09934ac61491b71e91785c415a22b3dc31
   # get worksheet data
   dat <- wb$worksheets[[sheet]]$sheet_data
   # get vector of entries
@@ -32,6 +33,7 @@ auto_heights <-
            factor = 1.0,
            base_height = 15,
            extra_height = 12) {
+    #    https://github.com/awalker89/openxlsx/pull/382/commits/7e9cfd09934ac61491b71e91785c415a22b3dc31
     # get base font size
     if (is.null(fontsize)) {
       fontsize <- as.integer(openxlsx::getBaseFont(wb)$size$val)
@@ -65,7 +67,8 @@ auto_heights <-
       # remove line break characters
       chr <- gsub("\\r|\\n", "", val[index])
       # measure width of entry (in pixels)
-      wdt <- strwidth(chr, unit = "in") * 20 / 1.43 # 20 px = 1.43 in
+      wdt <-
+        strwidth(chr, unit = "in") * 20 / 1.43 # 20 px = 1.43 in
       # compute optimal height
       if (length(wdt) == 0) {
         base_height

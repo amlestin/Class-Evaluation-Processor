@@ -827,14 +827,16 @@ export.semester.summary <- function(semester.summary) {
     course.codes.heading <- Reduce(paste, course.codes.heading)
     
     course.comments <-
-      cbind(course.comments, rep("", length(course.comments)))
-    course.comments <-
-      cbind(course.comments, rep("", length(course.comments)))
+      cbind(course.comments, "", "")
+    
     num.profs <- nrow(course.report)
     course.report <-
-      rbind(
+      rbind.na(
         c(course.name, "", ""),
-        c("Summer 2019 Evals", "", ""),
+        #        c("Summer 2019 Evals", "", ""),
+        c(paste(
+          student.contacts[1, "TERM.DESCRIPTION"], "Course Evaluations"
+        ), "", ""),
         c(course.codes.heading, "", ""),
         c(response.rate.heading, "", ""),
         "",

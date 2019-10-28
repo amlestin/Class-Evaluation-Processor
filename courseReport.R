@@ -257,6 +257,7 @@ for (prof in 1:length(reviewl)) {
   num.courses <- length(reviewl[[prof]]$courses)
   prof.name <- names(reviewl[prof])
   
+  # prof.report <- c()
   prof.report <- data.frame()
   line <- data.frame()
   summary.ratings.prod <- c()

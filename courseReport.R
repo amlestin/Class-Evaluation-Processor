@@ -7,79 +7,6 @@
 # qualtrics.api <- source_python("src/qualtrics_api.py")
 # # survey data will be saved to the same directory as this script
 # download_survey("API_TOKEN", "SURVEY_ID", "DATACENTER_ID")
-get_worksheet_entries <- function(wb, sheet) {
-  #  https://github.com/awalker89/openxlsx/pull/382/commits/7e9cfd09934ac61491b71e91785c415a22b3dc31
-  # get worksheet data
-  dat <- wb$worksheets[[sheet]]$sheet_data
-  # get vector of entries
-  val <- dat$v
-  # get boolean vector of text entries
-  typ <- (dat$t == 1) & !is.na(dat$t)
-  # get text entry strings
-  str <- unlist(wb$sharedStrings[as.integer(val)[typ] + 1])
-  # remove xml tags
-  str <- gsub("<.*?>", "", str)
-  # write strings to vector of entries
-  val[typ] <- str
-  # return vector of entries
-  val
-}
-
-auto_heights <-
-  function(wb,
-           sheet,
-           selected,
-           fontsize = NULL,
-           factor = 1.0,
-           base_height = 15,
-           extra_height = 12) {
-    #    https://github.com/awalker89/openxlsx/pull/382/commits/7e9cfd09934ac61491b71e91785c415a22b3dc31
-    # get base font size
-    if (is.null(fontsize)) {
-      fontsize <- as.integer(openxlsx::getBaseFont(wb)$size$val)
-    }
-    # set factor to adjust font width (empiricially found scale factor 4 here)
-    factor <- 4 * factor / fontsize
-    # get worksheet data
-    dat <- wb$worksheets[[sheet]]$sheet_data
-    # get columns widths
-    colWidths <- wb$colWidths[[sheet]]
-    # select fixed (non-auto) and visible (non-hidden) columns only
-    specified <-
-      (colWidths != "auto") & (attr(colWidths, "hidden") == "0")
-    # return default row heights if no column widths are fixed
-    if (length(specified) == 0) {
-      message("No column widths specified, returning default row heights.")
-      cols <- integer(0)
-      heights <- rep(base_height, length(selected))
-      return(list(cols, heights))
-    }
-    # get fixed column indices
-    cols <- as.integer(names(specified)[specified])
-    # get fixed column widths
-    widths <- as.numeric(colWidths[specified])
-    # get all worksheet entries
-    val <- get_worksheet_entries(wb, sheet)
-    # compute optimal height per selected row
-    heights <- sapply(selected, function(row) {
-      # select entries in given row and columns of fixed widths
-      index <- (dat$rows == row) & (dat$cols %in% cols)
-      # remove line break characters
-      chr <- gsub("\\r|\\n", "", val[index])
-      # measure width of entry (in pixels)
-      wdt <-
-        strwidth(chr, unit = "in") * 20 / 1.43 # 20 px = 1.43 in
-      # compute optimal height
-      if (length(wdt) == 0) {
-        base_height
-      } else {
-        base_height + extra_height * as.integer(max(wdt / widths * factor))
-      }
-    })
-    # return list of indices of columns with fixed widths and optimal row heights
-    list(cols, heights)
-  }
-
 
 
 if (!require("openxlsx", character.only = T, quietly = T)) {
@@ -90,6 +17,7 @@ if (!require("scales", character.only = T, quietly = T)) {
 }
 library(openxlsx)
 library("scales")
+source("src/helpers.R")
 
 # opens a window to select the input file
 winDialog(type = c("ok"),
@@ -122,7 +50,7 @@ if ("CRN" %in% names(student.contacts) == TRUE) {
   DT <- unique(unique(DT, by = "CRN"), by = "UID.")
   for (course.ctr in 1:nrow(DT)) {
     profs.indices <- which(grepl("PROF", names(DT)))
-    row <- DT[course.ctr,]
+    row <- DT[course.ctr, ]
     
     profs <- c()
     dups <- c()
@@ -190,8 +118,7 @@ create.semester.summary <- function(reviewl) {
         function(course)
           as.character(unlist(course)),
         mapply(function(course.title)
-          #          evals[which(evals$TITLE == course.title), ][1, ][, prof.cols]
-          unique(evals[which(evals$TITLE == course.title),][, prof.cols])
+          unique(evals[which(evals$TITLE == course.title), ][, prof.cols])
           , unique.titles, SIMPLIFY = F),
         SIMPLIFY = F
       ),
@@ -233,8 +160,6 @@ contacts <- unique(contacts)
 
 # Gets all reviews for each professor in contacts and adds them to reviewl
 reviewl <- list()
-comment.files <- list()
-
 if (num.prof.cols > 0) {
   for (cur.eval in 3:nrow(evals)) {
     # for each P column, e.g, P1
@@ -316,20 +241,6 @@ if (num.prof.cols > 0) {
         }
       }
     }
-    
-    eval.comment <- as.character(evals[cur.eval, "W22"])
-    
-    alpha.course.title <- gsub("[[:punct:]]", ".", course.title)
-    comment.file.name <-
-      paste(paste(course.code, alpha.course.title, sep = "-"),
-            ".txt",
-            sep = "")
-    
-    if (eval.comment != "") {
-      comment.block <- paste("Comment: ", eval.comment, "\n\n")
-      comment.files[[comment.file.name]] <-
-        c(comment.files[[comment.file.name]], comment.block)
-    }
   }
 } else {
   # error shows if script cannot be run because of invalid num.prof.cols value
@@ -340,19 +251,14 @@ if (num.prof.cols > 0) {
   # quit(save = "ask")
 }
 
-# outputs comment text files for each course
-# for (cur.file in 1:length(names(comment.files))) {
-#   cur.file.name <- names(comment.files[cur.file])
-#   write(comment.files[[cur.file.name]], file = cur.file.name)
-# }
-
 # outputs a file for each professor titled [Professor's name].csv in the format of (Course Code, Course Title, Reponse Rate, Num Evals, Course Size, Average, Frequencies)
 summary.report <- list()
 for (prof in 1:length(reviewl)) {
   num.courses <- length(reviewl[[prof]]$courses)
   prof.name <- names(reviewl[prof])
   
-  prof.report <- c()
+  prof.report <- data.frame()
+  line <- data.frame()
   summary.ratings.prod <- c()
   summary.num.ratings <- c()
   summary.course.names <- names(reviewl[[prof]]$courses)
@@ -414,23 +320,34 @@ for (prof in 1:length(reviewl)) {
       cur.course.title <- names(reviewl[[prof]]$courses[cur.course])
       
       cur.course.size <- course.sizes[[cur.course.code]]
-      #      summary.course.sizes <- c(summary.course.sizes, cur.course.size)
-      #      reviewl[[prof]]$total.students.taught <-  reviewl[[prof]]$total.students.taught + cur.course.size
       
       # use the scales package to represent the response rate as a percent
+      if (cur.course.size < 1 || is.null(cur.course.size)) {
+        s <- paste(
+          "Invalid course size! Setting to 1234567.",
+          cur.course.code,
+          cur.course.title,
+          " - Size:",
+          cur.course.size
+        )
+        cur.course.size <- 1234567
+        winDialog(type = c("ok"), s)
+      }
+      
       reviewl[[prof]]$courses[[cur.course]][[cur.section]][["response.rate"]] <-
         percent(num.ratings / cur.course.size)
       
       line <-
-        c(
+        cbind(
           cur.course.code,
           cur.course.title,
           reviewl[[prof]]$courses[[cur.course]][[cur.section]][["response.rate"]],
           num.ratings,
           cur.course.size,
           reviewl[[prof]]$courses[[cur.course]][[cur.section]][["average"]],
-          reviewl[[prof]]$courses[[cur.course]][[cur.section]][["freqs"]]
+          matrix(as.character(reviewl[[prof]]$courses[[cur.course]][[cur.section]][["freqs"]]), nrow = 1)
         )
+      
       prof.report <- rbind(prof.report, line)
     }
   }
@@ -689,7 +606,6 @@ export.semester.summary <- function(semester.summary) {
         c(course.comments, current.comments)
     }
     
-    #    course.comments <- c("", course.comments)
     course.respondents <-
       course.respondents[course.respondents != ""]
     
@@ -826,17 +742,21 @@ export.semester.summary <- function(semester.summary) {
           paste(paste(y[1], y[2], sep = ""), sprintf("%03d", as.numeric(y[3])), sep = "."), simplify = F))
     course.codes.heading <- Reduce(paste, course.codes.heading)
     
-    course.comments <-
-      cbind(course.comments, "", "")
     
+    if (length(course.comments) != 0) {
+      course.comments <-
+        cbind(course.comments, "", "")
+    } else {
+      course.comments <- c("", "", "")
+    }
+    
+    semester <- student.contacts[1, "TERM.DESCRIPTION"]
     num.profs <- nrow(course.report)
+    
     course.report <-
-      rbind.na(
+      rbind(
         c(course.name, "", ""),
-        #        c("Summer 2019 Evals", "", ""),
-        c(paste(
-          student.contacts[1, "TERM.DESCRIPTION"], "Course Evaluations"
-        ), "", ""),
+        c(paste(semester, "Course Evaluations"), "", ""),
         c(course.codes.heading, "", ""),
         c(response.rate.heading, "", ""),
         "",
@@ -1052,6 +972,7 @@ export.semester.summary <- function(semester.summary) {
     file.name <- gsub("\\.", " ", file.name)
     file.name <-
       gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", file.name, perl = TRUE)
+    file.name <- paste(file.name, semester)
     
     #    course.report <- data.frame(course.report)
     writeData(wb,
@@ -1060,10 +981,7 @@ export.semester.summary <- function(semester.summary) {
               colNames = FALSE) # add the new worksheet to the workbook
     
     # resizes column widths to fit contents
-    #setColWidths(wb, sheet.number, cols = 1:4, widths = "auto")
     setColWidths(wb, sheet.number, cols = 1, widths = 70)
-    #    setRowHeights(wb, sheet.number, rows = seq(16 + num.profs + 3, nrow(course.report)), heights = "auto")
-    #    setRowHeights(wb, sheet.number, rows = seq(16 + num.profs + 3, nrow(course.report)), heights = 50)
     # makes sure sheet fits on one printable page
     pageSetup(wb,
               sheet.number,

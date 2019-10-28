@@ -50,7 +50,7 @@ if ("CRN" %in% names(student.contacts) == TRUE) {
   DT <- unique(unique(DT, by = "CRN"), by = "UID.")
   for (course.ctr in 1:nrow(DT)) {
     profs.indices <- which(grepl("PROF", names(DT)))
-    row <- DT[course.ctr, ]
+    row <- DT[course.ctr,]
     
     profs <- c()
     dups <- c()
@@ -118,7 +118,7 @@ create.semester.summary <- function(reviewl) {
         function(course)
           as.character(unlist(course)),
         mapply(function(course.title)
-          unique(evals[which(evals$TITLE == course.title), ][, prof.cols])
+          unique(evals[which(evals$TITLE == course.title),][, prof.cols])
           , unique.titles, SIMPLIFY = F),
         SIMPLIFY = F
       ),

@@ -397,10 +397,6 @@ for (prof in 1:length(reviewl)) {
       summary.course.names
     )
   
-  # summary.line <-
-  #   c(prof.name, summary.average, summary.course.names)
-  
-  
   summary.line.length <- length(summary.line)
   summary.report.ncol <- ncol(summary.report)
   

@@ -124,8 +124,12 @@ create.semester.summary <- function(reviewl) {
       ),
       SIMPLIFY = F
     )
-  profs.by.course <-
-    profs.by.course[-which(lengths(profs.by.course) == 0)]
+  
+  unevaluated.course.found <- length(which(lengths(profs.by.course) == 0)) > 0
+  
+  if (unevaluated.course.found)
+    profs.by.course <-
+      profs.by.course[-which(lengths(profs.by.course) == 0)]
   
   semester.summary <- c()
   for (i in seq(length(profs.by.course))) {

@@ -106,18 +106,25 @@ for (code in 1:length(unique.codes)) {
 course.codes.to.crn <- list(all.codes)
 
 create.semester.summary <- function(reviewl) {
+  # character vector of the title of every course evaluated
   unique.titles <- as.character(unique(student.contacts[, "TITLE"]))
   unique.titles <- sort(unique.titles)
   
+  # vector of index of columns with PROF in their column name
   prof.cols <- grep("PROF", names(evals))
+  
+  # associate the evaluated professors with each course title
   profs.by.course <-
     mapply(
       function(course)
+        # remove empty course titles
         course <- course[which(course != "")],
       mapply(
         function(course)
+          # unlist and convert to character
           as.character(unlist(course)),
         mapply(function(course.title)
+          # extract unique professors from evals with the given course title
           unique(evals[which(evals$TITLE == course.title), ][, prof.cols])
           , unique.titles, SIMPLIFY = F),
         SIMPLIFY = F
@@ -125,27 +132,39 @@ create.semester.summary <- function(reviewl) {
       SIMPLIFY = F
     )
   
+  # boolean flag that a course had no evaluations
   unevaluated.course.found <-
     length(which(lengths(profs.by.course) == 0)) > 0
   
+  # if a course was not evaluated
   if (unevaluated.course.found)
     profs.by.course <-
     profs.by.course[-which(lengths(profs.by.course) == 0)]
   
   semester.summary <- c()
   for (i in seq(length(profs.by.course))) {
+    # get the ith course name from profs.by.course
     course.name <- names(profs.by.course)[[i]]
     
     course.summary <- list()
     for (j in seq(length(profs.by.course[[i]]))) {
+      
+      # get the jth prof for the ith course
       prof.name <- profs.by.course[[i]][[j]]
+      
+      # get evals for the professor's name in that course
       prof.evals <-
         reviewl[[which(names(reviewl) == prof.name)]][["courses"]][[course.name]]
+      
+      # extract prof evals in the order of the alphabetically sorted professor names
       prof.evals <-
         prof.evals[sort(names(prof.evals), index.return = T)$ix]
+      
+      # save the courses evals to course summary
       course.summary[[prof.name]] <- prof.evals
     }
     
+    # append the course summary to the semester summary
     semester.summary[[course.name]] <- course.summary
   }
   return(semester.summary)

@@ -8,18 +8,22 @@
 # # survey data will be saved to the same directory as this script
 # download_survey("API_TOKEN", "SURVEY_ID", "DATACENTER_ID")
 
-
+# install required packages if they are not installed
 if (!require("openxlsx", character.only = T, quietly = T)) {
   install.packages("openxlsx")
 }
 if (!require("scales", character.only = T, quietly = T)) {
   install.packages("scales")
 }
+
+# load required packages
 library(openxlsx)
 library("scales")
+
+# load helper functions from src directory
 source("src/helpers.R")
 
-# opens a window to select the input file
+# opens an explorer window to select the input files
 winDialog(type = c("ok"),
           "Select the report file you exported from Qualtrics after the evaluation.")
 evaluations.filename <- file.choose()
@@ -29,14 +33,16 @@ winDialog(
 )
 student.contacts.filename <- file.choose()
 
+#  read in the contact and distribution files
 evals <- read.csv(evaluations.filename, stringsAsFactors = FALSE)
 student.contacts <- read.csv(student.contacts.filename)
 
 ##  COLUMN NUMBER CONFIGURATION ##
+# calculate  the number of columns with PROF in their name
 num.prof.cols <- length(grep("PROF", names(evals)))
+# calculate  the number of columns with TA in their name
 num.ta.cols <- length(grep("TA", names(evals)))
 num.ta.cols <- 0
-
 
 # sets the directory to output reports files to
 setwd("~/Class-Evaluation-Processor/reports")
@@ -97,17 +103,11 @@ for (code in 1:length(unique.codes)) {
   cur.code <- unique.codes[code]
   course.sizes[[cur.code]] <- length(which(all.codes == cur.code))
 }
-
 course.codes.to.crn <- list(all.codes)
 
 create.semester.summary <- function(reviewl) {
   unique.titles <- as.character(unique(student.contacts[, "TITLE"]))
   unique.titles <- sort(unique.titles)
-  
-  # 0) sort everything so section 1 come before 2
-  # 1) List of titles of all courses
-  # 2) For each title, find relevant unique course codes
-  # 3) For each course  code, print prof stats
   
   prof.cols <- grep("PROF", names(evals))
   profs.by.course <-
@@ -284,23 +284,15 @@ for (prof in 1:length(reviewl)) {
           any(reviews == "Good") |
           any(reviews == "Fair") | any(reviews == "Poor")) {
         ecount <- length(which(reviews == "Excellent"))
-        
         vgcount <- length(which(reviews == "Very Good"))
-        
         gcount <- length(which(reviews == "Good"))
-        
         fcount <- length(which(reviews == "Fair"))
-        
         pcount <- length(which(reviews == "Poor"))
       } else {
         ecount <- length(which(reviews == "5"))
-        
         vgcount <- length(which(reviews == "4"))
-        
         gcount <- length(which(reviews == "3"))
-        
         fcount <- length(which(reviews == "2"))
-        
         pcount <- length(which(reviews == "1"))
       }
       
@@ -376,17 +368,10 @@ for (prof in 1:length(reviewl)) {
   
   
   prof.name.formatted <- gsub("[[:punct:]]", ".", prof.name)
-  
   prof.report.name <- paste(prof.name.formatted, ".csv", sep = "")
-  
-  # write.table(prof.report,
-  #             prof.report.name,
-  #             sep = ",",
-  #             row.names = FALSE)
   
   summary.ratings.prod <- sum(summary.ratings.prod)
   summary.num.ratings <- sum(summary.num.ratings)
-  
   summary.average <- summary.ratings.prod / summary.num.ratings
   
   total.students.taught <- sum(as.numeric(prof.report[, 5]))
@@ -586,7 +571,6 @@ export.semester.summary <- function(semester.summary) {
                   evals$SECTION.. == section
               ), "Overall.assessment.of.course"])
       
-      
       current.comments <- evals[which(
         evals$SUBJECT.CODE == subject.code &
           evals$COURSE.. == course
@@ -595,7 +579,6 @@ export.semester.summary <- function(semester.summary) {
       
       if (all(nchar(current.comments) == 0))
         next()
-      
       
       current.comments <-
         current.comments[which(nchar(current.comments) != 0)]
@@ -721,7 +704,6 @@ export.semester.summary <- function(semester.summary) {
             sep = "")
     table.col.names <- c("Field", "Average", "Responses")
     
-    
     q.responses <-
       rbind(
         length(q1),
@@ -743,7 +725,6 @@ export.semester.summary <- function(semester.summary) {
         strsplit(x, "\\.")), function (y)
           paste(paste(y[1], y[2], sep = ""), sprintf("%03d", as.numeric(y[3])), sep = "."), simplify = F))
     course.codes.heading <- Reduce(paste, course.codes.heading)
-    
     
     if (length(course.comments) != 0) {
       course.comments <-
@@ -807,12 +788,10 @@ export.semester.summary <- function(semester.summary) {
         borderStyle = "thin",
         halign = "left"
       )
-    
     textStyle <-
       createStyle(fontSize = 12,
                   fontColour = "#000000",
                   wrapText = TRUE)
-    
     # page header style
     addStyle(
       wb,
@@ -846,7 +825,6 @@ export.semester.summary <- function(semester.summary) {
       cols = 1:4,
       stack = TRUE
     )
-    
     # table headings
     addStyle(
       wb,
@@ -856,7 +834,6 @@ export.semester.summary <- function(semester.summary) {
       cols = 1:3,
       stack = TRUE
     )
-    
     addStyle(
       wb,
       sheet.number,
@@ -873,7 +850,6 @@ export.semester.summary <- function(semester.summary) {
       cols = 1:3,
       stack = TRUE
     )
-    
     # bottom borders for each field
     addStyle(
       wb,
@@ -899,7 +875,6 @@ export.semester.summary <- function(semester.summary) {
       cols = 3,
       stack = TRUE
     )
-    
     # bottom borders for each professor
     addStyle(
       wb,
@@ -925,7 +900,6 @@ export.semester.summary <- function(semester.summary) {
       cols = 3,
       stack = TRUE
     )
-    
     addStyle(
       wb,
       sheet.number,
@@ -942,8 +916,6 @@ export.semester.summary <- function(semester.summary) {
       cols = 3,
       stack = TRUE
     )
-    
-    
     addStyle(
       wb,
       sheet.number,
@@ -960,7 +932,6 @@ export.semester.summary <- function(semester.summary) {
       cols = 3,
       stack = TRUE
     )
-    
     addStyle(
       wb,
       sheet.number,
@@ -976,7 +947,6 @@ export.semester.summary <- function(semester.summary) {
       gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", file.name, perl = TRUE)
     file.name <- paste(file.name, semester)
     
-    #    course.report <- data.frame(course.report)
     writeData(wb,
               sheet = sheet.number,
               course.report,

@@ -28,6 +28,9 @@ contacts["PROF10"] <- NA
 contacts["PROF11"] <- NA
 contacts["PROF12"] <- NA
 contacts["PROF13"] <- NA
+contacts["PROF14"] <- NA
+contacts["PROF15"] <- NA
+contacts["PROF16"] <- NA
 
 contacts["TA1"] <- NA
 contacts["TA2"] <- NA
@@ -73,7 +76,7 @@ for (i in 1:nrow(contacts)) {
     
     print(error)
     error.log <- c(error.log, error)
-    original.prof.cols <- grep("PROF", colnames(contacts[i,]))
+    original.prof.cols <- grep("PROF", colnames(contacts[i, ]))
     
     course.director <- as.character(contacts[i, "INSTRUCTOR"])
     
@@ -85,46 +88,50 @@ for (i in 1:nrow(contacts)) {
     
     contacts[i, original.prof.cols] <-
       c(course.director, rep(NA, length(original.prof.cols) - 1))
-    contacts[i, ] <- NA
+    contacts[i,] <- NA
     next
   }
   
-  course.info <- profs.by.crn[course.index,]
+  course.info <- profs.by.crn[course.index, ]
   
-  prof.cols <- grep("INSTRUCTOR[0-9]", colnames(course.info))
+  #  prof.cols <- grep("INSTRUCTOR[0-9]", colnames(course.info))
+  prof.cols <- grep("PROF[0-9]", colnames(course.info))
   ta.cols <- grep("TA[0-9]", colnames(course.info))
   
   course.profs <- course.info[prof.cols]
   course.tas <- as.character(course.info[ta.cols])
-  original.ta.cols <- grep("TA[0-9]", colnames(contacts[i,]))
+  original.ta.cols <- grep("TA[0-9]", colnames(contacts[i, ]))
   
-# course.profs[which(is.na(course.profs))] <- ""
+  # course.profs[which(is.na(course.profs))] <- ""
   course.tas[which(is.na(course.tas))] <- ""
   
   contacts[i, original.ta.cols] <- course.tas
-
-   if (length(course.tas) != 0) {
-   course.tas <-
-     unlist(
-       lapply(
-         strsplit(course.tas, ", "),
-         convert.lastname.comma.firstname.to.firstname.space.lastname
-       )
-     )
-   contacts[i, original.ta.cols] <- course.tas
-   }
-
+  
+  if (length(course.tas) != 0) {
+    # TODO not needed because of name format F19
+    # course.tas <-
+    #   unlist(
+    #     lapply(
+    #       strsplit(course.tas, ", "),
+    #       convert.lastname.comma.firstname.to.firstname.space.lastname
+    #     )
+    #   )
+    contacts[i, original.ta.cols] <- course.tas
+  }
+  
   # TODO: may need to AND parameters to prevent
   valid.profs <-
     as.character(course.profs[unique(c(which(course.profs != ""), which(!is.na(course.profs))))])
-   valid.profs <-
-     unlist(
-       lapply(
-         strsplit(valid.profs, ", "),
-         convert.lastname.comma.firstname.to.firstname.space.lastname
-       )
-     )
   
+  # TODO: not needed because name format F19
+  # valid.profs <-
+  #   unlist(
+  #     lapply(
+  #       strsplit(valid.profs, ", "),
+  #       convert.lastname.comma.firstname.to.firstname.space.lastname
+  #     )
+  #   )
+  #
   # TODO: should not occur because of check above
   if (length(which(valid.profs == "")) > 0) {
     valid.profs <- valid.profs[-c(which(valid.profs == ""))]
@@ -135,7 +142,7 @@ for (i in 1:nrow(contacts)) {
     #   profs[[current.crn]] <- "NO VALID PROFS"
   } else {
     #  profs[[current.crn]] <- c(current.crn, valid.profs)
-    original.prof.cols <- grep("PROF", colnames(contacts[i,]))
+    original.prof.cols <- grep("PROF", colnames(contacts[i, ]))
     
     contacts[i, original.prof.cols] <-
       c(valid.profs, rep(NA, length(original.prof.cols) - length(valid.profs)))
@@ -148,7 +155,7 @@ colnames(contacts)[which(colnames(contacts) == "FIRST.NAME")] = "FirstName"
 colnames(contacts)[which(colnames(contacts) == "LAST.NAME")] = "LastName"
 
 contacts <-
-  contacts[!apply(is.na(contacts) | contacts == "", 1, all),]
+  contacts[!apply(is.na(contacts) | contacts == "", 1, all), ]
 
 working.dir <- trimws(dirname(contacts.file))
 setwd(working.dir)
@@ -162,7 +169,7 @@ write.table(
 )
 
 write.table(
-  error.log,
+  unique(error.log),
   "error log.txt",
   col.names = FALSE,
   row.names = FALSE,

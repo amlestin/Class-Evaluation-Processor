@@ -56,11 +56,6 @@ for (col.num in 1:length(response.cols)) {
   question.col <- as.vector(dist[, response.cols[col.num]])
   question.col <- question.col[-c(1:2)]
   
-  #ratings <- vapply(question.col, function(a) grep(a, question.types[[grep(a, question.types)]]), c(1))
-  #ratings <- vapply(question.col, function(a) { print(grep(a, question.types))}, c(1))
-  #names(ratings) <- NULL
-  
-  
   q.type <- c()
   for (a in question.col) {
     q.type <- c(q.type, grep(a, question.types))
@@ -73,13 +68,11 @@ for (col.num in 1:length(response.cols)) {
   
   q.a <-
     rbind(q.a, c(dist[1, response.cols[col.num]], question.average))
-  
-  # dist[nrow(dist)+1, response.cols[col.num]] <- question.average
 }
 
 names(q.a) <- NULL
-q.a[1, ] <- c("Question", "Average")
-q.a <- rbind(c("HIMS Course Evaluations",""), q.a)
+q.a[1,] <- c("Question", "Average")
+q.a <- rbind(c("HIMS Course Evaluations", ""), q.a)
 
 
 setColWidths(wb, 1, cols = 1:2, widths = "auto")
@@ -109,4 +102,3 @@ for (i in 2:nrow(q.a)) {
 
 writeData(wb, 1, q.a, colNames = FALSE)
 saveWorkbook(wb, "HIMS-report.xlsx", overwrite = TRUE)
-

@@ -31,6 +31,7 @@ for (col.num in 1:length(response.cols)){
   #ratings <- vapply(question.col, function(a) { print(grep(a, question.types))}, c(1))
   #names(ratings) <- NULL
   getmode <- function(v) {
+    #https://www.tutorialspoint.com/r/r_mean_median_mode.htm
     uniqv <- unique(v)
     uniqv[which.max(tabulate(match(v, uniqv)))]
   }

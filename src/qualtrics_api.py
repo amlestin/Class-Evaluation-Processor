@@ -6,38 +6,62 @@ import json
 import io
 
 
+#                              #
+#                              #
+#                              #
+# FILL IN API CREDENTIALS HERE #
+#                              #
+#                              #
 
-def download_survey(apiToken, surveyId, dataCenter):
+api_token = ""
+data_center = ""
 
-  fileFormat = "csv"
+
+
+def download_survey(api_token, survey_id, data_center):
+
+  file_format = "csv"
 
   # Setting static parameters
-  requestCheckProgress = 0
-  progressStatus = "in progress"
-  baseUrl = "https://{0}.qualtrics.com/API/v3/responseexports/".format(dataCenter)
+  request_check_progress = 0
+  progress_status = "in progress"
+  base_url = "https://{0}.qualtrics.com/API/v3/responseexports/".format(data_center)
   headers = {
       "content-type": "application/json",
-      "x-api-token": apiToken,
+      "x-api-token": api_token,
       }
 
   # Step 1: Creating Data Export
-  downloadRequestUrl = baseUrl
-  downloadRequestPayload = '{"format":"' + fileFormat + '","surveyId":"' + surveyId + '"}'
-  downloadRequestResponse = requests.request("POST", downloadRequestUrl, data=downloadRequestPayload, headers=headers)
-  progressId = downloadRequestResponse.json()["result"]["id"]
-  print(downloadRequestResponse.text)
+  download_request_url = base_url
+  download_request_payload = '{"format":"' + file_format + '","survey_id":"' + survey_id + '"}'
+  download_request_response = requests.request("POST", download_request_url, data=download_request_payload, headers=headers)
+  progress_id = download_request_response.json()["result"]["id"]
+  print(download_request_response.text)
 
   # Step 2: Checking on Data Export Progress and waiting until export is ready
-  while requestCheckProgress < 100 and progressStatus is not "complete":
-      requestCheckUrl = baseUrl + progressId
-      requestCheckResponse = requests.request("GET", requestCheckUrl, headers=headers)
-      requestCheckProgress = requestCheckResponse.json()["result"]["percentComplete"]
-      print("Download is " + str(requestCheckProgress) + " complete")
+  while request_check_progress < 100 and progress_status is not "complete":
+      request_check_url = base_url + progress_id
+      request_check_response = requests.request("GET", request_check_url, headers=headers)
+      request_check_progress = request_check_response.json()["result"]["percentComplete"]
+      print("Download is " + str(request_check_progress) + " complete")
 
   # Step 3: Downloading file
-  requestDownloadUrl = baseUrl + progressId + '/file'
-  requestDownload = requests.request("GET", requestDownloadUrl, headers=headers, stream=True)
+  request_download_url = base_url + progress_id + '/file'
+  request_download = requests.request("GET", request_download_url, headers=headers, stream=True)
 
   # Step 4: Unzipping the file
-  zipfile.ZipFile(io.BytesIO(requestDownload.content)).extractall()
+  zipfile.ZipFile(io.BytesIO(request_download.content)).extractall()
   print('Complete')
+
+cart = []
+
+while True:
+  s = input("Please enter the next survey ID (press enter when done): ")
+  if s == "":
+    break
+  else:
+    cart.append(s)
+
+for s in cart:
+  survey_id = s
+  download_survey(api_token, survey_id, data_center)

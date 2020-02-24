@@ -137,4 +137,4 @@ setRowHeights(wb, 1, rows = 19:nrow(q.a), heights)
 
 # write to the workbook then write the xlsx file to disk
 writeData(wb, 1, q.a, colNames = FALSE)
-saveWorkbook(wb, paste(input.filname, "HIMS eval.xlsx", overwrite = TRUE))
+saveWorkbook(wb, paste(input.filename, "HIMS eval.xlsx", overwrite = TRUE))

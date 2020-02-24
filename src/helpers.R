@@ -1,3 +1,12 @@
+is.name.valid <- function(name) {
+  if (length(name) == 0 ||
+      is.na(name) || name == "") {
+    return(FALSE)
+  }
+  
+  return(TRUE)
+}
+
 evals.to.average <- function(reviews) {
   # counts frequencies of each possible review response
   if (any(reviews == "Excellent") |

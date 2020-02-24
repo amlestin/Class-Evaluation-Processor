@@ -42,7 +42,7 @@ student.contacts <- read.csv(student.contacts.filename)
 num.prof.cols <- length(grep("PROF", names(evals)))
 # calculate  the number of columns with TA in their name
 num.ta.cols <- length(grep("TA", names(evals)))
-num.ta.cols <- 0
+#num.ta.cols <- 0
 
 # sets the directory to output reports files to
 setwd("~/Class-Evaluation-Processor/reports")
@@ -462,6 +462,9 @@ if (length(error.log) > 0) {
 }
 
 semester.summary <- create.semester.summary(reviewl)
+
+#semester.summary <- prep.semester.summary(semester.summary)
+
 export.semester.summary <- function(semester.summary) {
   report.col.names  <-
     c("Professor", "Average", "Responses")
@@ -485,6 +488,9 @@ export.semester.summary <- function(semester.summary) {
       
       prof.course.codes <-
         names(semester.summary[[course.index]][[prof.index]])
+      
+      cat(course.name, prof.course.codes, "\n")
+      
       course.codes <- c(course.codes, prof.course.codes)
       # sums frequencies of all reviews in the section, i.e., total number of ratings the professor received
       num.ratings <- sum(freqs)
@@ -1008,3 +1014,11 @@ if (num.ta.cols <= 0) {
 
 winDialog(type = c("ok"),
           "Your reports have been generated in the reports folder.")
+
+
+prep.semester.summary <- function(semester.summary) {
+ example <- semester.summary$`Health Sciences Ethics`
+ 
+ 
+  
+}

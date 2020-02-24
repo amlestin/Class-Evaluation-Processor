@@ -1,7 +1,7 @@
 # HIM Simplified Reports
 
-input.filename <- file.choose()
-dist <- read.csv(input.filename, stringsAsFactors = FALSE)
+input.file.name <- file.choose()
+dist <- read.csv(input.file.name, stringsAsFactors = FALSE)
 
 library(openxlsx)
 
@@ -137,4 +137,12 @@ setRowHeights(wb, 1, rows = 19:nrow(q.a), heights)
 
 # write to the workbook then write the xlsx file to disk
 writeData(wb, 1, q.a, colNames = FALSE)
-saveWorkbook(wb, paste(input.filename, "HIMS eval.xlsx", overwrite = TRUE))
+
+report.file.name <- basename(input.file.name)
+report.file.name <- substr(report.file.name, 1, (nchar(report.file.name) - 4))
+report.file.name <- make.names(report.file.name)
+report.file.name <- gsub("\\.", " ", report.file.name)
+report.file.name <-
+  gsub("(?<=[\\s])\\s*|^\\s+|\\s+$", "", report.file.name, perl = TRUE)
+
+saveWorkbook(wb, paste(report.file.name, "HIMS eval.xlsx"), overwrite = TRUE)

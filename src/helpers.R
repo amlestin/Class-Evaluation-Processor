@@ -1,5 +1,82 @@
+evals.to.freqs <- function(reviews) {
+  # counts frequencies of each possible review response
+  if (any(reviews == "Excellent") |
+      any(reviews == "Very Good") |
+      any(reviews == "Good") |
+      any(reviews == "Fair") | any(reviews == "Poor")) {
+    ecount <- length(which(reviews == "Excellent"))
+    vgcount <- length(which(reviews == "Very Good"))
+    gcount <- length(which(reviews == "Good"))
+    fcount <- length(which(reviews == "Fair"))
+    pcount <- length(which(reviews == "Poor"))
+  } else {
+    ecount <- length(which(reviews == "5"))
+    vgcount <- length(which(reviews == "4"))
+    gcount <- length(which(reviews == "3"))
+    fcount <- length(which(reviews == "2"))
+    pcount <- length(which(reviews == "1"))
+  }
+  
+  return(c(ecount, vgcount, gcount, fcount, pcount))
+}
+
+evals.to.average <- function(reviews) {
+      # counts frequencies of each possible review response
+      if (any(reviews == "Excellent") |
+          any(reviews == "Very Good") |
+          any(reviews == "Good") |
+          any(reviews == "Fair") | any(reviews == "Poor")) {
+        ecount <- length(which(reviews == "Excellent"))
+        
+        vgcount <- length(which(reviews == "Very Good"))
+        
+        gcount <- length(which(reviews == "Good"))
+        
+        fcount <- length(which(reviews == "Fair"))
+        
+        pcount <- length(which(reviews == "Poor"))
+      } else {
+        ecount <- length(which(reviews == "5"))
+        
+        vgcount <- length(which(reviews == "4"))
+        
+        gcount <- length(which(reviews == "3"))
+        
+        fcount <- length(which(reviews == "2"))
+        
+        pcount <- length(which(reviews == "1"))
+      }
+      
+      # vector of all rating counts
+      freqs <- c(ecount, vgcount, gcount, fcount, pcount)
+      
+      # sums frequencies of all reviews in the section, i.e., total number of ratings the professor received
+      num.ratings <- sum(freqs)
+      
+      # calculates a weighted average
+      ratings.prod <-
+        (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount)
+      
+      average <- ratings.prod / num.ratings
+      average <- round(average, digits = 2)
+      average <- sprintf("%0.2f", average)
+      
+      return (average)
+    }
+    
+course.size.from.sections <- function(course.codes) {
+  section.sizes <- c()
+  for (code in course.codes) {
+    section.size <-  course.sizes[[code]]
+    section.sizes <- c(section.sizes, section.size)
+  }
+  course.size <- sum(section.sizes)
+  
+  return(course.size)
+}
+
 create.export.ss <- function(reports.by.codes) {
-  course.title <- names(reports.by.codes)[1]
+    course.title <- names(reports.by.codes)[1]
   
   # TODO: remove dependency on revieews.by.course.code
   reviews <- reviews.by.course.code[course.title]
@@ -21,28 +98,32 @@ create.export.ss <- function(reports.by.codes) {
       
       pcols <- c(prof.cols, ta.cols)
       
-      
+      # TEST
       # associate the evaluated professors with each course title
-      profs.by.course <-
-        mapply(
-          function(course)
-            # remove empty course titles
-            course <- course[which(course != "")],
-          mapply(
-            function(course)
-              # unlist and convert to character
-              as.character(unlist(course)),
-            mapply(function(course.title)
-              # extract unique professors from evals with the given course title
-              unique(evals[which(evals$TITLE == course.title), ][, pcols])
-              # unique(evals[which(paste(evals$SUBJECT.CODE, evals$COURSE.., evals$SECTION.., sep=".")) == section])
-              , course.title, SIMPLIFY = F),
-            SIMPLIFY = F
-          ),
-          SIMPLIFY = F
-        )
       
-      # boolean flag that a course had no evaluations
+      # separate section into three parts: code, course, section
+      v <- strsplit(section, ".")
+      v <- unlist(strsplit(section, split = ".", fixed = TRUE))
+      
+      sjc <- v[1]
+      crs <- v[2]
+      sc <- v[3]
+      
+      eval.ind <- which(evals$SUBJECT.CODE == sjc & evals$COURSE.. == crs & evals$SECTION.. == sc)
+      
+      profs.by.course <-
+        mapply(function(eval.ind) {
+          # extract unique professors from evals
+          evals[eval.ind, pcols]
+        }
+        , eval.ind, SIMPLIFY = T)
+      
+      profs.by.course <- unique(unlist(profs.by.course))
+      # remove empty course titles
+      profs.by.course <-
+        profs.by.course[which(profs.by.course != "")]
+      
+     # boolean flag that a course had no evaluations
       unevaluated.course.found <-
         length(which(lengths(profs.by.course) == 0)) > 0
       
@@ -87,9 +168,50 @@ create.export.ss <- function(reports.by.codes) {
       ss[[t]] <- c(ss[[t]], course.summary)
     }
     # names(ss) <- paste(names(ss), paste(sort(report), collapse = " "))
-    print(ss)
+    # print(ss)
     
+    # TODO: check
     dups <- which(table(names(ss[[1]])) > 1)
+    dups.ss.ind <- list()
+    
+    if (length(dups) > 0) {
+    for (prof in names(dups)) {
+      course <- ss[[1]]
+      dups.ss.ind <- which(names(course) == prof)
+      
+      # print(dups.ss.ind)
+      
+      e <- course[dups.ss.ind]
+      
+      ratings <- c()
+      freqs <- c()
+      
+      combined.sections <- c()
+      for (section in e) {
+        data <- section[[1]]
+        section.name <- names(section)
+        combined.sections <- c(combined.sections, section.name)
+        ratings <- c(ratings, data$ratings)
+      }
+      combined.average <- evals.to.average(ratings)
+      combined.freqs <- evals.to.freqs(ratings)
+      combined.size <- course.size.from.sections(combined.sections)
+      combined.sections <- paste(combined.sections, collapse = " ")
+      
+      css <- list()
+      css[[course.title]][[prof]][[combined.sections]][["ratings"]] <- ratings
+      css[[course.title]][[prof]][[combined.sections]][["freqs"]] <- combined.freqs
+      css[[course.title]][[prof]][[combined.sections]][["average"]] <- as.numeric(combined.average)
+      css[[course.title]][[prof]][[combined.sections]][["response.rate"]] <- percent(length(ratings)/combined.size)
+      
+      # ss[dups.ss.ind] <- NULL
+      # ss[[(length(ss) + 1)]] <- css
+      
+      ss <- css
+      print(prof)
+      print(combined.average)
+    }
+    }
     
     # ss2 <- list(names(ss))
     # 
@@ -196,6 +318,9 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
     
     unique.sections <-
       unique(find.sections.by.course(course.index, semester.summary))
+
+    
+    
     uscs.formatted <- paste(unique.sections, collapse = ' ')
     if ( (s == FALSE) && length(unique.sections) > 1) {
       cat(
@@ -213,12 +338,12 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
         )
       )
       
-      i <-
+      j <-
         readline(
           "Press enter to continue without splitting. Press [S] to split course into multiple reports: "
         )
       
-      if (i == "S") {
+      if (j == "S") {
         # Create split report
         reports.by.codes <- NULL
         
@@ -249,13 +374,18 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
           freqs + semester.summary[[course.index]][[prof.index]][[sec.index]][["freqs"]]
       }
       
+     
       prof.course.codes <-
         names(semester.summary[[course.index]][[prof.index]])
+      
+       if (s == TRUE) {
+         prof.course.codes <- unlist(strsplit(names(semester.summary[[course.index]][[prof.index]]), split = " "))
+        }
       
       cat("Processing: ",
           course.name,
           " - ",
-          names(semester.summary[[course.index]])[prof.index],
+          prof.course.codes,
           "\n")
       
       course.codes <- c(course.codes, prof.course.codes)
@@ -269,15 +399,7 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
       average <- ratings.prod / num.ratings
       average <- round(average, digits = 2)
       average <- sprintf("%0.2f", average)
-      
-      course.size.from.sections <- function(course.codes) {
-        section.sizes <- c()
-        for (code in course.codes) {
-          section.size <-  course.sizes[[code]]
-          section.sizes <- c(section.sizes, section.size)
-        }
-        course.size <- sum(section.sizes)
-      }
+     
       
       course.size <- course.size.from.sections(prof.course.codes)
       
@@ -395,49 +517,7 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
     q7 <- q7[q7 != ""]
     q8 <- q8[q8 != ""]
     
-    evals.to.average <- function(reviews) {
-      # counts frequencies of each possible review response
-      if (any(reviews == "Excellent") |
-          any(reviews == "Very Good") |
-          any(reviews == "Good") |
-          any(reviews == "Fair") | any(reviews == "Poor")) {
-        ecount <- length(which(reviews == "Excellent"))
-        
-        vgcount <- length(which(reviews == "Very Good"))
-        
-        gcount <- length(which(reviews == "Good"))
-        
-        fcount <- length(which(reviews == "Fair"))
-        
-        pcount <- length(which(reviews == "Poor"))
-      } else {
-        ecount <- length(which(reviews == "5"))
-        
-        vgcount <- length(which(reviews == "4"))
-        
-        gcount <- length(which(reviews == "3"))
-        
-        fcount <- length(which(reviews == "2"))
-        
-        pcount <- length(which(reviews == "1"))
-      }
-      
-      # vector of all rating counts
-      freqs <- c(ecount, vgcount, gcount, fcount, pcount)
-      
-      # sums frequencies of all reviews in the section, i.e., total number of ratings the professor received
-      num.ratings <- sum(freqs)
-      
-      # calculates a weighted average
-      ratings.prod <-
-        (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount)
-      
-      average <- ratings.prod / num.ratings
-      average <- round(average, digits = 2)
-      average <- sprintf("%0.2f", average)
-      
-      return (average)
-    }
+
     
     q1.average <- evals.to.average(q1)
     q2.average <- evals.to.average(q2)

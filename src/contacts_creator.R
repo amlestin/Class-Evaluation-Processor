@@ -150,9 +150,13 @@ for (i in 1:nrow(contacts)) {
 }
 
 
-colnames(contacts)[which(colnames(contacts) == "EMAIL.ADDRESS")] = "EMAIL"
-colnames(contacts)[which(colnames(contacts) == "FIRST.NAME")] = "FirstName"
-colnames(contacts)[which(colnames(contacts) == "LAST.NAME")] = "LastName"
+# colnames(contacts)[which(colnames(contacts) == "EMAIL.ADDRESS")] = "EMAIL"
+
+# colnames(contacts)[which(colnames(contacts) == "FIRST.NAME")] = "FirstName"
+# colnames(contacts)[which(colnames(contacts) == "LAST.NAME")] = "LastName"
+
+colnames(contacts)[which(colnames(contacts) == "FNAME")] = "FirstName"
+colnames(contacts)[which(colnames(contacts) == "LNAME")] = "LastName"
 
 contacts <-
   contacts[!apply(is.na(contacts) | contacts == "", 1, all), ]
@@ -175,3 +179,4 @@ write.table(
   row.names = FALSE,
   quote = FALSE
 )
+

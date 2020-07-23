@@ -253,26 +253,10 @@ for (prof in 1:length(reviewl)) {
       cur.course.code <-
         names(reviewl[[prof]]$courses[[cur.course]][cur.section])
       
-      # counts frequencies of each possible review response
-      if (any(reviews == "Excellent") |
-          any(reviews == "Very Good") |
-          any(reviews == "Good") |
-          any(reviews == "Fair") | any(reviews == "Poor")) {
-        ecount <- length(which(reviews == "Excellent"))
-        vgcount <- length(which(reviews == "Very Good"))
-        gcount <- length(which(reviews == "Good"))
-        fcount <- length(which(reviews == "Fair"))
-        pcount <- length(which(reviews == "Poor"))
-      } else {
-        ecount <- length(which(reviews == "5"))
-        vgcount <- length(which(reviews == "4"))
-        gcount <- length(which(reviews == "3"))
-        fcount <- length(which(reviews == "2"))
-        pcount <- length(which(reviews == "1"))
-      }
+
       
       # vector of all rating counts
-      freqs <- c(ecount, vgcount, gcount, fcount, pcount)
+      freqs <- evals.to.freqs(reviews)
       
       reviewl[[prof]]$courses[[cur.course]][[cur.section]][["freqs"]] <-
         freqs
@@ -282,7 +266,7 @@ for (prof in 1:length(reviewl)) {
       
       # calculates a weighted average
       ratings.prod <-
-        (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount)
+        (5 * freqs[1] + 4 * freqs[2] + 3 * freqs[3] + 2 * freqs[4] + 1 * freqs[5])
       
       reviewl[[prof]]$courses[[cur.course]][[cur.section]][["average"]] <-
         ratings.prod / num.ratings
@@ -429,13 +413,6 @@ export.semester.summary(sc)
 
 semester.summary <- semester.summary[-sci]
 export.semester.summary(semester.summary)
-
-# 
-# GMS 6630 Basic Medical Histology section 3 - Dr. Muffly
-# GMS 6706 Basic Medical Neurosciences section 3 - Dr. Amin
-# GMS 6440 Basic Medical Physiology section 3 - Dr. Yip
-# GMS 6505 Basic Medical Pharmacology section 3 - Dr. Amin
-# reminds user that the num.ta.cols variable was not configured
 
 if (num.ta.cols <= 0) {
   # winDialog(

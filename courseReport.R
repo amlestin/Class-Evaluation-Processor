@@ -45,12 +45,75 @@ student.contacts.filename <- file.choose()
 evals <- read.csv(evaluations.filename, stringsAsFactors = FALSE)
 student.contacts <- read.csv(student.contacts.filename)
 
+##  COLUMN NAME CONFIGURATION ##
+#PROF
+c.PROF <- "PROF"
+#TA
+c.TA <- "TA"
+#UID
+c.UID <- "UID."
+#CRN
+c.CRN <- "CRN"
+#SUBJECT
+c.SUB <- "SUBJECT.CODE"
+#COURSE
+c.CRS <- "COURSE.."
+#SECTION
+c.SEC <- "SECTION.."
+#TITLE
+c.TITLE <- "TITLE"
+#COMMENTS
+c.COM <- "W22"
+# SEMESTER
+c.SEM <- "TERM.DESCRIPTION"
+#Course questions
+c.Q1 <-
+  "Description.of.course.objectives.and.assignments"
+c.Q2 <-
+  "Communication.of.ideas.and.information"
+c.Q3 <-
+  "Expression.of.expectation.for.performance.in.this.class"
+c.Q4 <-
+  "Availability.to.assist.students.in.or.out.of.class"
+c.Q5 <-
+  "Respect.and.concern.for.students"
+c.Q6 <-
+  "Stimulation.of.interest.in.the.course"
+c.Q7 <-
+  "Facilitation.of.learning"
+c.Q8 <-
+  "Overall.assessment.of.course"
+
+# Column name validation in evals
+if (any(
+  c.UID %in% names(evals) == FALSE,
+  c.CRN %in% names(evals) == FALSE,
+  c.SUB %in% names(evals) == FALSE,
+  c.CRS %in% names(evals) == FALSE,
+  c.SEC %in% names(evals) == FALSE,
+  c.TITLE %in% names(evals) == FALSE,
+  c.COM %in% names(evals) == FALSE,
+  c.SEM %in% names(evals) == FALSE,
+  c.Q1 %in% names(evals) == FALSE,
+  c.Q2 %in% names(evals) == FALSE,
+  c.Q3 %in% names(evals) == FALSE,
+  c.Q4 %in% names(evals) == FALSE,
+  c.Q5 %in% names(evals) == FALSE,
+  c.Q6 %in% names(evals) == FALSE,
+  c.Q7 %in% names(evals) == FALSE,
+  c.Q8 %in% names(evals) == FALSE
+)
+== TRUE) {
+  cat("ERROR: There is a missing column in the input!")
+  while(1){}
+  # which(colname.flags == TRUE)
+}
+
 ##  COLUMN NUMBER CONFIGURATION ##
 # calculate  the number of columns with PROF in their name
-num.prof.cols <- length(grep("PROF", names(evals)))
 # calculate  the number of columns with TA in their name
-num.ta.cols <- length(grep("TA", names(evals)))
-#num.ta.cols <- 0
+num.prof.cols <- length(grep(c.PROF, names(evals)))
+num.ta.cols <- length(grep(c.PROF, names(evals)))
 
 # sets the directory to output reports files to
 if ("reports" %in% list.files() == FALSE)
@@ -60,13 +123,14 @@ setwd("reports")
 # check for duplicate professors in the student contacts
 # only checks this method if contacts file has CRNs
 error.log <- c()
-if ("CRN" %in% names(student.contacts) == TRUE) {
+if (c.CRN %in% names(student.contacts) == TRUE) {
   library(data.table)
   DT <- data.table(student.contacts, stringsAsFactors = FALSE)
-  DT <- unique(unique(DT, by = "CRN"), by = "UID.")
+  #UID. may change semester
+  DT <- unique(unique(DT, by = c.CRN), by = c.UID)
   for (course.ctr in 1:nrow(DT)) {
-    profs.indices <- which(grepl("PROF", names(DT)))
-    row <- DT[course.ctr,]
+    profs.indices <- which(grepl(c.PROF, names(DT)))
+    row <- DT[course.ctr, ]
     
     profs <- c()
     dups <- c()
@@ -88,7 +152,7 @@ if ("CRN" %in% names(student.contacts) == TRUE) {
       if (dups.flag == TRUE) {
         error.message <-
           paste(dups,
-                as.character(DT[course.ctr, "CRN"]))
+                as.character(DT[course.ctr, ..c.CRN]))
         error.log <- c(error.log, error.message)
       }
     }
@@ -98,9 +162,9 @@ if ("CRN" %in% names(student.contacts) == TRUE) {
 # determines course sizes by counting student contacts per course
 all.codes <- c()
 for (i in 1:nrow(student.contacts)) {
-  s.code <- as.character(student.contacts[i, "SUBJECT.CODE"])
-  c.num <- as.character(student.contacts[i, "COURSE.."])
-  s.num <- as.character(student.contacts[i, "SECTION.."])
+  s.code <- as.character(student.contacts[i, c.SUB])
+  c.num <- as.character(student.contacts[i, c.CRS])
+  s.num <- as.character(student.contacts[i, c.SEC])
   
   code <- paste(s.code, c.num, s.num, sep = ".")
   all.codes <- c(all.codes, code)
@@ -117,7 +181,7 @@ course.codes.to.crn <- list(all.codes)
 
 
 # creates vector of character representations of all professor names used in the file
-prof.cols <- grep("PROF", colnames(evals))
+prof.cols <- grep(c.PROF, colnames(evals))
 contacts <-
   mapply(function (row.index)
     mapply(function(col.index)
@@ -139,7 +203,7 @@ if (num.prof.cols > 0) {
       # converts the P number to a character for string pasting
       pctr.char <- as.character(pctr)
       # combines the character and number to have a valid column index, e.g., "P1"
-      pcol <-  paste("PROF", pctr.char, sep = "")
+      pcol <-  paste(c.PROF, pctr.char, sep = "")
       
       # adds one to the pctr because column Q2 corresponds to column P1's review
       qctr.char <- as.character(pctr + 1)
@@ -153,30 +217,24 @@ if (num.prof.cols > 0) {
       prof.name <- as.character(evals[cur.eval, pcol])
       
       
-      # if (length(prof.name) == 0 ||
-      #     is.na(prof.name) || prof.name == "")
       if (!is.name.valid(prof.name))
         next()
-      
-      # DEBUG ONLY
-      #print(prof.name)
-      # DEBUG ONLY
       
       # check for duplicate professors in a course
       if (prof.name %in% previously.seen.profs) {
         error.log <-
           c(error.log,
-            paste(prof.name, as.character(evals[cur.eval, "CRN"])))
+            paste(prof.name, as.character(evals[cur.eval, c.CRN])))
         next()
       }
       previously.seen.profs <- c(previously.seen.profs, prof.name)
       
       # saves the current eval's course information into a variable
-      course.title <- as.character(evals[cur.eval, "TITLE"])
-      subject.code <- as.character(evals[cur.eval, "SUBJECT.CODE"])
-      course.number <- as.character(evals[cur.eval, "COURSE.."])
+      course.title <- as.character(evals[cur.eval, c.TITLE])
+      subject.code <- as.character(evals[cur.eval, c.SUB])
+      course.number <- as.character(evals[cur.eval, c.CRS])
       sequence.number <-
-        as.character(evals[cur.eval, "SECTION.."])
+        as.character(evals[cur.eval, c.SEC])
       
       course.code <-
         paste(subject.code, course.number, sequence.number, sep = ".")
@@ -204,7 +262,7 @@ if (num.prof.cols > 0) {
         ###############################
         ta.review.col.char <- as.character(ta.ctr + 17)
         
-        ta.col <- paste("TA", ta.ctr.char, sep = "")
+        ta.col <- paste(c.TA, ta.ctr.char, sep = "")
         ta.review.col <- paste("Q", ta.review.col.char, sep = "")
         
         ta.name <- as.character(evals[cur.eval, ta.col])
@@ -252,8 +310,6 @@ for (prof in 1:length(reviewl)) {
         reviewl[[prof]]$courses[[cur.course]][[cur.section]]$ratings
       cur.course.code <-
         names(reviewl[[prof]]$courses[[cur.course]][cur.section])
-      
-
       
       # vector of all rating counts
       freqs <- evals.to.freqs(reviews)
@@ -319,11 +375,11 @@ for (prof in 1:length(reviewl)) {
       "Number of Evals",
       "Course Size",
       "Average Eval",
-      "Excellent",
-      "Very Good",
-      "Good",
+      "Poor",
       "Fair",
-      "Poor"
+      "Good",
+      "Very Good",
+      "Excellent"
     )
   rownames(prof.report) <- NULL
   

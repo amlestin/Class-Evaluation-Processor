@@ -1,3 +1,15 @@
+find.sections.by.course <-
+  function(course.index, semester.summary) {
+    sections <- c()
+    for (prof.section in 1:length(semester.summary[[course.index]])) {
+      sections <-
+        c(sections, names(semester.summary[[course.index]][[prof.section]]))
+    }
+    course.sections <- unique(sections)
+    
+    return(course.sections)
+  }
+
 evals.to.freqs <- function(reviews) {
   # counts frequencies of each possible review response
   if (any(reviews == "Excellent") |
@@ -21,49 +33,21 @@ evals.to.freqs <- function(reviews) {
 }
 
 evals.to.average <- function(reviews) {
-      # counts frequencies of each possible review response
-      if (any(reviews == "Excellent") |
-          any(reviews == "Very Good") |
-          any(reviews == "Good") |
-          any(reviews == "Fair") | any(reviews == "Poor")) {
-        ecount <- length(which(reviews == "Excellent"))
-        
-        vgcount <- length(which(reviews == "Very Good"))
-        
-        gcount <- length(which(reviews == "Good"))
-        
-        fcount <- length(which(reviews == "Fair"))
-        
-        pcount <- length(which(reviews == "Poor"))
-      } else {
-        ecount <- length(which(reviews == "5"))
-        
-        vgcount <- length(which(reviews == "4"))
-        
-        gcount <- length(which(reviews == "3"))
-        
-        fcount <- length(which(reviews == "2"))
-        
-        pcount <- length(which(reviews == "1"))
-      }
-      
-      # vector of all rating counts
-      freqs <- c(ecount, vgcount, gcount, fcount, pcount)
-      
-      # sums frequencies of all reviews in the section, i.e., total number of ratings the professor received
-      num.ratings <- sum(freqs)
-      
-      # calculates a weighted average
-      ratings.prod <-
-        (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount)
-      
-      average <- ratings.prod / num.ratings
-      average <- round(average, digits = 2)
-      average <- sprintf("%0.2f", average)
-      
-      return (average)
-    }
-    
+  freqs <- evals.to.freqs(reviews)
+  # sums frequencies of all reviews in the section, i.e., total number of ratings the professor received
+  num.ratings <- sum(freqs)
+  
+  # calculates a weighted average
+  ratings.prod <-
+    (5 * freqs[1] + 4 * freqs[2] + 3 * freqs[3] + 2 * freqs[4] + 1 * freqs[5])
+  
+  average <- ratings.prod / num.ratings
+  average <- round(average, digits = 2)
+  average <- sprintf("%0.2f", average)
+  
+  return (average)
+}
+
 course.size.from.sections <- function(course.codes) {
   section.sizes <- c()
   for (code in course.codes) {
@@ -75,8 +59,101 @@ course.size.from.sections <- function(course.codes) {
   return(course.size)
 }
 
+split.course.summary <- function(course.index, semester.summary) {
+  course.title <- names(semester.summary)[[course.index]]
+  course.sections <-
+    find.sections.by.course(course.index, semester.summary)
+  
+  original.num.sections <- length(course.sections)
+  if (original.num.sections == 1) {
+    print("Error: There is only 1 section in this course.")
+    return(NULL)
+  }
+  
+  print.sections(course.title, course.sections)
+  
+  print("How many reports would you like to separate this course into?")
+  prompt.message <- "Enter # reports to split into: "
+  num.reports <- readline(prompt.message)
+  num.reports <- as.integer(num.reports)
+  #TODO handle invalid num.reports
+  
+  if (num.reports > original.num.sections) {
+    print("Error: More reports than sections. Restart script and try again.")
+    return(NULL)
+  }
+  
+  if (num.reports <= 1) {
+    print("Error: Invalid number of reports. Restart script and try again.")
+    return(NULL)
+  }
+  
+  # print the course section options
+  
+  reports <- list()
+  for (r.number in 1:num.reports) {
+    print.sections(course.title, course.sections)
+    
+    print("Separate input by commas. Ex: [1,2,3]")
+    prompt.message <-
+      paste(
+        "Enter the section numbers (#?) you want included in report #",
+        r.number,
+        "/",
+        num.reports,
+        ": ",
+        sep = ""
+      )
+    
+    section.numbers <- readline(prompt.message)
+    
+    #TODO: validate section numbers and reset prompt if invalid
+    
+    section.numbers <-
+      as.integer(unlist(strsplit(section.numbers, ",")))
+    # if (length(section.numbers) < r.number)
+    
+    
+    
+    
+    if (all(section.numbers %in% 1:length(course.sections))) {
+      chosen.sections <- course.sections[section.numbers]
+      for (section in chosen.sections) {
+        course.sections <-
+          course.sections[-which(course.sections == section)]
+        
+        if (length(reports) >= r.number) {
+          # TODO: do not append create sublist
+          reports[[r.number]] <-
+            c(reports[[r.number]], section)
+        }
+        else {
+          reports[[r.number]] <- section
+          # names(reports)[r.number] <- r.number
+        }
+        
+        
+        
+        if (length(course.sections) == 0 &
+            length(reports) < num.reports) {
+          print("ERROR: No more sections to allocate!")
+          return(NULL)
+        }
+        
+      }
+    }
+    else {
+      print("ERROR: invalid section index. Please restart script.")
+      return(NULL)
+    }
+  }
+  report.name <- names(semester.summary)[course.index]
+  names(reports) <- report.name
+  return(reports)
+}
+
 create.export.ss <- function(reports.by.codes) {
-    course.title <- names(reports.by.codes)[1]
+  course.title <- names(reports.by.codes)[1]
   
   # TODO: remove dependency on revieews.by.course.code
   reviews <- reviews.by.course.code[course.title]
@@ -92,9 +169,9 @@ create.export.ss <- function(reports.by.codes) {
       # print(evals.to.average(section.reviews))
       
       # vector of index of columns with PROF in their column name
-      prof.cols <- grep("PROF", names(evals))
+      prof.cols <- grep(c.PROF, names(evals))
       # vector of index of columns with TA in their column name
-      ta.cols <- grep("TA", names(evals))
+      ta.cols <- grep(c.TA, names(evals))
       
       pcols <- c(prof.cols, ta.cols)
       
@@ -109,7 +186,9 @@ create.export.ss <- function(reports.by.codes) {
       crs <- v[2]
       sc <- v[3]
       
-      eval.ind <- which(evals$SUBJECT.CODE == sjc & evals$COURSE.. == crs & evals$SECTION.. == sc)
+      eval.ind <-
+        which(evals$SUBJECT.CODE == sjc &
+                evals$COURSE.. == crs & evals$SECTION.. == sc)
       
       profs.by.course <-
         mapply(function(eval.ind) {
@@ -123,7 +202,7 @@ create.export.ss <- function(reports.by.codes) {
       profs.by.course <-
         profs.by.course[which(profs.by.course != "")]
       
-     # boolean flag that a course had no evaluations
+      # boolean flag that a course had no evaluations
       unevaluated.course.found <-
         length(which(lengths(profs.by.course) == 0)) > 0
       
@@ -175,76 +254,61 @@ create.export.ss <- function(reports.by.codes) {
     dups.ss.ind <- list()
     
     if (length(dups) > 0) {
-    for (prof in names(dups)) {
-      course <- ss[[1]]
-      dups.ss.ind <- which(names(course) == prof)
-      
-      # print(dups.ss.ind)
-      
-      e <- course[dups.ss.ind]
-      
-      ratings <- c()
-      freqs <- c()
-      
-      combined.sections <- c()
-      for (section in e) {
-        data <- section[[1]]
-        section.name <- names(section)
-        combined.sections <- c(combined.sections, section.name)
-        ratings <- c(ratings, data$ratings)
+      for (prof in names(dups)) {
+        course <- ss[[1]]
+        dups.ss.ind <- which(names(course) == prof)
+        
+        # print(dups.ss.ind)
+        
+        e <- course[dups.ss.ind]
+        
+        ratings <- c()
+        freqs <- c()
+        
+        combined.sections <- c()
+        for (section in e) {
+          data <- section[[1]]
+          section.name <- names(section)
+          combined.sections <- c(combined.sections, section.name)
+          ratings <- c(ratings, data$ratings)
+        }
+        combined.average <- evals.to.average(ratings)
+        combined.freqs <- evals.to.freqs(ratings)
+        combined.size <-
+          course.size.from.sections(combined.sections)
+        combined.sections <-
+          paste(combined.sections, collapse = " ")
+        
+        css <- list()
+        css[[course.title]][[prof]][[combined.sections]][["ratings"]] <-
+          ratings
+        css[[course.title]][[prof]][[combined.sections]][["freqs"]] <-
+          combined.freqs
+        css[[course.title]][[prof]][[combined.sections]][["average"]] <-
+          as.numeric(combined.average)
+        css[[course.title]][[prof]][[combined.sections]][["response.rate"]] <-
+          percent(length(ratings) / combined.size)
+        
+        # ss[dups.ss.ind] <- NULL
+        # ss[[(length(ss) + 1)]] <- css
+        
+        ss <- css
+        print(prof)
+        print(combined.average)
       }
-      combined.average <- evals.to.average(ratings)
-      combined.freqs <- evals.to.freqs(ratings)
-      combined.size <- course.size.from.sections(combined.sections)
-      combined.sections <- paste(combined.sections, collapse = " ")
-      
-      css <- list()
-      css[[course.title]][[prof]][[combined.sections]][["ratings"]] <- ratings
-      css[[course.title]][[prof]][[combined.sections]][["freqs"]] <- combined.freqs
-      css[[course.title]][[prof]][[combined.sections]][["average"]] <- as.numeric(combined.average)
-      css[[course.title]][[prof]][[combined.sections]][["response.rate"]] <- percent(length(ratings)/combined.size)
-      
-      # ss[dups.ss.ind] <- NULL
-      # ss[[(length(ss) + 1)]] <- css
-      
-      ss <- css
-      print(prof)
-      print(combined.average)
-    }
     }
     
-    # ss2 <- list(names(ss))
-    # 
-    # ss[[1]][[1]] <- c(ss[[1]][[1]], ss[[1]][[2]])
-    # for (report in  ss ) {
-    #   for (sec in report) {
-    # # names(ss[[report]])
-    #   # ss2$ratings= 
-    #   # ss2$freqs = ss[[1]][[1]]$GMS.6871.1$freqs + ss[[1]][[2]]$GMS.6871.3$freqs
-    #   # ss2$average
-    #   # ss2$response.rate
-    #   }
-    # }
-    
-    # combine sections in ss
-    # 
-    # ss2 <- unlist(ss)
-    # 
-    # 
     export.semester.summary(ss, s = TRUE)
-    # for (i in 1:100)
-    #   cat("*")
-    # print(ss2)
   }
 }
 
 create.semester.summary <- function(reviewl) {
   # character vector of the title of every course evaluated
-  unique.titles <- as.character(unique(student.contacts[, "TITLE"]))
+  unique.titles <- as.character(unique(student.contacts[, c.TITLE]))
   unique.titles <- sort(unique.titles)
   
   # vector of index of columns with PROF in their column name
-  prof.cols <- grep("PROF", names(evals))
+  prof.cols <- grep(c.PROF, names(evals))
   
   # associate the evaluated professors with each course title
   profs.by.course <-
@@ -310,7 +374,7 @@ create.semester.summary <- function(reviewl) {
 
 export.semester.summary <- function(semester.summary, s = FALSE) {
   report.col.names  <-
-    c("Professor", "Average", "Responses")
+    c("Professor", "Average", "Responses", "Poor", "Fair", "Good", "Very Good", "Excellent")
   for (course.index in seq(length(semester.summary))) {
     course.summary <- semester.summary[[course.index]]
     course.name <- names(semester.summary)[[course.index]]
@@ -318,11 +382,11 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
     
     unique.sections <-
       unique(find.sections.by.course(course.index, semester.summary))
-
+    
     
     
     uscs.formatted <- paste(unique.sections, collapse = ' ')
-    if ( (s == FALSE) && length(unique.sections) > 1) {
+    if ((s == FALSE) && length(unique.sections) > 1) {
       cat(
         paste(
           "Course can be split: ",
@@ -374,19 +438,24 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
           freqs + semester.summary[[course.index]][[prof.index]][[sec.index]][["freqs"]]
       }
       
-     
+      
       prof.course.codes <-
         names(semester.summary[[course.index]][[prof.index]])
       
-       if (s == TRUE) {
-         prof.course.codes <- unlist(strsplit(names(semester.summary[[course.index]][[prof.index]]), split = " "))
-        }
+      if (s == TRUE) {
+        prof.course.codes <-
+          unlist(strsplit(names(semester.summary[[course.index]][[prof.index]]), split = " "))
+      }
       
-      cat("Processing: ",
-          course.name,
-          " - ",
-          prof.course.codes,
-          "\n")
+      cat(
+        "Processing: ",
+        course.name,
+        "-",
+        prof.course.codes,
+        "-",
+        names(semester.summary[[course.index]])[prof.index],
+        "\n"
+      )
       
       course.codes <- c(course.codes, prof.course.codes)
       # sums frequencies of all reviews in the section, i.e., total number of ratings the professor received
@@ -399,7 +468,7 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
       average <- ratings.prod / num.ratings
       average <- round(average, digits = 2)
       average <- sprintf("%0.2f", average)
-     
+      
       
       course.size <- course.size.from.sections(prof.course.codes)
       
@@ -409,7 +478,12 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
           average,
           paste(num.ratings, "/",
                 course.size, sep =
-                  "")
+                  ""),
+          freqs[5],
+          freqs[4],
+          freqs[3],
+          freqs[2],
+          freqs[1]
         )
       
       course.report <- rbind(course.report, row)
@@ -441,55 +515,55 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
                 evals$SUBJECT.CODE == subject.code &
                   evals$COURSE.. == course &
                   evals$SECTION.. == section
-              ), "Description.of.course.objectives.and.assignments"])
+              ), c.Q1])
       q2 <- c(q2,
               evals[which(
                 evals$SUBJECT.CODE == subject.code &
                   evals$COURSE.. == course &
                   evals$SECTION.. == section
-              ), "Communication.of.ideas.and.information"])
+              ), c.Q2])
       q3 <- c(q3,
               evals[which(
                 evals$SUBJECT.CODE == subject.code &
                   evals$COURSE.. == course &
                   evals$SECTION.. == section
-              ), "Expression.of.expectation.for.performance.in.this.class"])
+              ), c.Q3])
       q4 <- c(q4,
               evals[which(
                 evals$SUBJECT.CODE == subject.code &
                   evals$COURSE.. == course &
                   evals$SECTION.. == section
-              ), "Availability.to.assist.students.in.or.out.of.class"])
+              ), c.Q4])
       q5 <- c(q5,
               evals[which(
                 evals$SUBJECT.CODE == subject.code &
                   evals$COURSE.. == course &
                   evals$SECTION.. == section
-              ), "Respect.and.concern.for.students"])
+              ), c.Q5])
       q6 <- c(q6,
               evals[which(
                 evals$SUBJECT.CODE == subject.code &
                   evals$COURSE.. == course &
                   evals$SECTION.. == section
-              ), "Stimulation.of.interest.in.the.course"])
+              ), c.Q6])
       q7 <- c(q7,
               evals[which(
                 evals$SUBJECT.CODE == subject.code &
                   evals$COURSE.. == course &
                   evals$SECTION.. == section
-              ), "Facilitation.of.learning"])
+              ), c.Q7])
       q8 <- c(q8,
               evals[which(
                 evals$SUBJECT.CODE == subject.code &
                   evals$COURSE.. == course &
                   evals$SECTION.. == section
-              ), "Overall.assessment.of.course"])
+              ), c.Q8])
       
       current.comments <- evals[which(
         evals$SUBJECT.CODE == subject.code &
           evals$COURSE.. == course
         & evals$SECTION.. == section
-      ), "W22"]
+      ), c.COM]
       
       if (all(nchar(current.comments) == 0))
         next()
@@ -517,18 +591,35 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
     q7 <- q7[q7 != ""]
     q8 <- q8[q8 != ""]
     
-
+    
     
     q1.average <- evals.to.average(q1)
+    q1.freqs <- evals.to.freqs(q1)
     q2.average <- evals.to.average(q2)
+    q2.freqs <- evals.to.freqs(q2)
     q3.average <- evals.to.average(q3)
+    q3.freqs <- evals.to.freqs(q3)
     q4.average <- evals.to.average(q4)
+    q4.freqs <- evals.to.freqs(q4)
     q5.average <- evals.to.average(q5)
+    q5.freqs <- evals.to.freqs(q5)
     q6.average <- evals.to.average(q6)
+    q6.freqs <- evals.to.freqs(q6)
     q7.average <- evals.to.average(q7)
+    q7.freqs <- evals.to.freqs(q7)
     q8.average <- evals.to.average(q8)
+    q8.freqs <- evals.to.freqs(q8)
     
-    q.cols <-
+    q1.freqs <- rev(q1.freqs)
+    q2.freqs <- rev(q2.freqs)
+    q3.freqs <- rev(q3.freqs)
+    q4.freqs <- rev(q4.freqs)
+    q5.freqs <- rev(q5.freqs)
+    q6.freqs <- rev(q6.freqs)
+    q7.freqs <- rev(q7.freqs)
+    q8.freqs <- rev(q8.freqs)
+    
+    q.average.cols <-
       rbind(
         q1.average,
         q2.average,
@@ -539,6 +630,19 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
         q7.average,
         q8.average
       )
+    
+     q.freqs.cols <-
+      rbind(
+        q1.freqs,
+        q2.freqs,
+        q3.freqs,
+        q4.freqs,
+        q5.freqs,
+        q6.freqs,
+        q7.freqs,
+        q8.freqs
+      )
+    
     
     course.respondents <- max(
       length(q1),
@@ -574,7 +678,7 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
             response.rate,
             " response rate",
             sep = "")
-    table.col.names <- c("Field", "Average", "Responses")
+    table.col.names <- c("Field", "Average", "Responses", "Poor", "Fair", "Good", "Very Good", "Excellent")
     
     q.responses <-
       rbind(
@@ -588,7 +692,7 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
         length(q8)
       )
     
-    table <- cbind(table, q.cols, q.responses)
+    table <- cbind(table, q.average.cols, q.responses, q.freqs.cols)
     table <- rbind(table.col.names, table)
     colnames(table) <- table.col.names
     
@@ -600,27 +704,27 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
     
     if (length(course.comments) != 0) {
       course.comments <-
-        cbind(course.comments, "", "")
+        cbind(course.comments, "", "", "", "", "", "", "")
     } else {
-      course.comments <- c("", "", "")
+      course.comments <- c("", "", "", "", "", "", "", "")
     }
     
-    semester <- student.contacts[1, "TERM.DESCRIPTION"]
+    semester <- student.contacts[1, c.SEM]
     num.profs <- nrow(course.report)
     
     course.report <-
       rbind(
-        c(course.name, "", ""),
-        c(paste(semester, "Course Evaluations"), "", ""),
-        c(course.codes.heading, "", ""),
-        c(response.rate.heading, "", ""),
+        c(course.name, "", "", "", "", "", "", ""),
+        c(paste(semester, "Course Evaluations"), "", "", "", "", "", "", ""),
+        c(course.codes.heading, "", "", "", "", "", "", ""),
+        c(response.rate.heading, "", "", "", "", "", "", ""),
         "",
         table,
         "",
         report.col.names,
         course.report,
         "",
-        c("Comments", "", ""),
+        c("Comments", "", "", "", "", "", "", ""),
         course.comments
       )
     
@@ -703,7 +807,7 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
       sheet.number,
       tableStyle,
       rows = 6,
-      cols = 1:3,
+      cols = 1:8,
       stack = TRUE
     )
     addStyle(
@@ -711,7 +815,7 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
       sheet.number,
       tableStyle,
       rows = 16,
-      cols = 1:3,
+      cols = 1:8,
       stack = TRUE
     )
     addStyle(
@@ -719,7 +823,7 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
       sheet.number,
       tableStyle,
       rows = (16 + num.profs + 2),
-      cols = 1:3,
+      cols = 1:8,
       stack = TRUE
     )
     # bottom borders for each field
@@ -745,6 +849,46 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
       rowStyle,
       rows = 7:14,
       cols = 3,
+      stack = TRUE
+    )
+     addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 7:14,
+      cols = 4,
+      stack = TRUE
+    )   
+         addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 7:14,
+      cols = 5,
+      stack = TRUE
+    )
+             addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 7:14,
+      cols = 6,
+      stack = TRUE
+    )
+                 addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 7:14,
+      cols = 7,
+      stack = TRUE
+    )
+                     addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 7:14,
+      cols = 8,
       stack = TRUE
     )
     # bottom borders for each professor
@@ -785,7 +929,7 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
       sheet.number,
       columnStyle,
       rows = 16:(16 + num.profs),
-      cols = 3,
+      cols = 1,
       stack = TRUE
     )
     addStyle(
@@ -852,97 +996,7 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
   }
 }
 
-split.course.summary <- function(course.index, semester.summary) {
-  course.title <- names(semester.summary)[[course.index]]
-  course.sections <- find.sections.by.course(course.index, semester.summary)
-  
-  original.num.sections <- length(course.sections)
-  if (original.num.sections == 1) {
-    print("Error: There is only 1 section in this course.")
-    return(NULL)
-  }
-  
-  print.sections(course.title, course.sections)
-  
-  print("How many reports would you like to separate this course into?")
-  prompt.message <- "Enter # reports to split into: "
-  num.reports <- readline(prompt.message)
-  num.reports <- as.integer(num.reports)
-  #TODO handle invalid num.reports
-  
-  if (num.reports > original.num.sections) {
-    print("Error: More reports than sections. Restart script and try again.")
-    return(NULL)
-  }
-  
-  if (num.reports < 1) {
-    print("Error: Invalid number of reports. Restart script and try again.")
-    return(NULL)
-  }
-  
-  # print the course section options
-  
-  reports <- list()
-  for (r.number in 1:num.reports) {
-    print.sections(course.title, course.sections)
-    
-    print("Separate input by commas. Ex: [1,2,3]")
-    prompt.message <-
-      paste(
-        "Enter the section numbers (#?) you want included in report #",
-        r.number,
-        "/",
-        num.reports,
-        ": ",
-        sep = ""
-      )
-    
-    section.numbers <- readline(prompt.message)
-    
-    #TODO: validate section numbers and reset prompt if invalid
-    
-    section.numbers <-
-      as.integer(unlist(strsplit(section.numbers, ",")))
-    # if (length(section.numbers) < r.number)
-     
-    
-  
-    
-    if (all(section.numbers %in% 1:length(course.sections))) {
-      chosen.sections <- course.sections[section.numbers]
-      for (section in chosen.sections) {
-        course.sections <-
-          course.sections[-which(course.sections == section)]
-        
-        if (length(reports) >= r.number) {
-          # TODO: do not append create sublist
-          reports[[r.number]] <-
-            c(reports[[r.number]], section)
-        }
-        else {
-          reports[[r.number]] <- section
-          # names(reports)[r.number] <- r.number
-        }
-        
-        
-        
-        if (length(course.sections) == 0 &
-            length(reports) < num.reports) {
-          print("ERROR: No more sections to allocate!")
-          return(NULL)
-        }
-        
-      }
-    }
-    else {
-      print("ERROR: invalid section index. Please restart script.")
-      return(NULL)
-    }
-  }
-  report.name <- names(semester.summary)[course.index]
-  names(reports) <- report.name
-  return(reports)
-}
+
 
 is.name.valid <- function(name) {
   if (length(name) == 0 ||
@@ -951,50 +1005,6 @@ is.name.valid <- function(name) {
   }
   
   return(TRUE)
-}
-
-evals.to.average <- function(reviews) {
-  # counts frequencies of each possible review response
-  if (any(reviews == "Excellent") |
-      any(reviews == "Very Good") |
-      any(reviews == "Good") |
-      any(reviews == "Fair") | any(reviews == "Poor")) {
-    ecount <- length(which(reviews == "Excellent"))
-    
-    vgcount <- length(which(reviews == "Very Good"))
-    
-    gcount <- length(which(reviews == "Good"))
-    
-    fcount <- length(which(reviews == "Fair"))
-    
-    pcount <- length(which(reviews == "Poor"))
-  } else {
-    ecount <- length(which(reviews == "5"))
-    
-    vgcount <- length(which(reviews == "4"))
-    
-    gcount <- length(which(reviews == "3"))
-    
-    fcount <- length(which(reviews == "2"))
-    
-    pcount <- length(which(reviews == "1"))
-  }
-  
-  # vector of all rating counts
-  freqs <- c(ecount, vgcount, gcount, fcount, pcount)
-  
-  # sums frequencies of all reviews in the section, i.e., total number of ratings the professor received
-  num.ratings <- sum(freqs)
-  
-  # calculates a weighted average
-  ratings.prod <-
-    (5 * ecount + 4 * vgcount + 3 * gcount + 2 * fcount + 1 * pcount)
-  
-  average <- ratings.prod / num.ratings
-  average <- round(average, digits = 2)
-  average <- sprintf("%0.2f", average)
-  
-  return (average)
 }
 
 get_worksheet_entries <- function(wb, sheet) {
@@ -1077,15 +1087,4 @@ print.sections <- function(course.title, course.sections) {
     print(paste("#", j, ": ", course.sections[section.index], sep = ""))
     j <- j + 1
   }
-}
-
-find.sections.by.course <- function(course.index, semester.summary) {
-  sections <- c()
-  for (prof.section in 1:length(semester.summary[[course.index]])) {
-    sections <-
-      c(sections, names(semester.summary[[course.index]][[prof.section]]))
-  }
-  course.sections <- unique(sections)
-  
-  return(course.sections)
 }

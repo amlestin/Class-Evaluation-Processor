@@ -155,7 +155,7 @@ split.course.summary <- function(course.index, semester.summary) {
 create.export.ss <- function(reports.by.codes) {
   course.title <- names(reports.by.codes)[1]
   
-  # TODO: remove dependency on revieews.by.course.code
+  # TODO: remove dependency on reviews.by.course.code
   reviews <- reviews.by.course.code[course.title]
   reviews.by.section <-
     unlist(reviews)
@@ -169,9 +169,12 @@ create.export.ss <- function(reports.by.codes) {
       # print(evals.to.average(section.reviews))
       
       # vector of index of columns with PROF in their column name
-      prof.cols <- grep(c.PROF, names(evals))
+      prof.cols.fmt <- paste("^",c.PROF, "[0-9]|", c.PROF, "[0-9][0-9]", sep = '')
+      ta.cols.fmt <- paste("^", c.TA, "[0-9]|", c.TA, "[0-9][0-9]", sep = '')
+        
+      prof.cols <- grep(prof.cols.fmt, names(evals))
       # vector of index of columns with TA in their column name
-      ta.cols <- grep(c.TA, names(evals))
+      ta.cols <- grep(ta.cols.fmt, names(evals))
       
       pcols <- c(prof.cols, ta.cols)
       
@@ -215,9 +218,9 @@ create.export.ss <- function(reports.by.codes) {
       i <- 1
       # get the ith course name from profs.by.course
       course.summary <- list()
-      for (j in seq(length(profs.by.course[[i]]))) {
+      for (j in 1:length(profs.by.course)) {
         # get the jth prof for the ith course
-        prof.name <- profs.by.course[[i]][[j]]
+        prof.name <- profs.by.course[[j]]
         
         # get evals for the professor's name in that course
         eval.index <- which(names(reviewl) == prof.name)
@@ -914,6 +917,46 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
       rowStyle,
       rows = 17:(16 + num.profs),
       cols = 3,
+      stack = TRUE
+    )
+    addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 17:(16 + num.profs),
+      cols = 4,
+      stack = TRUE
+    )
+    addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 17:(16 + num.profs),
+      cols = 5,
+      stack = TRUE
+    )
+    addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 17:(16 + num.profs),
+      cols = 6,
+      stack = TRUE
+    )
+    addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 17:(16 + num.profs),
+      cols = 7,
+      stack = TRUE
+    )
+    addStyle(
+      wb,
+      sheet.number,
+      rowStyle,
+      rows = 17:(16 + num.profs),
+      cols = 8,
       stack = TRUE
     )
     addStyle(

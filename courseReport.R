@@ -85,28 +85,13 @@ c.Q8 <-
   "Overall.assessment.of.course"
 
 # Column name validation in evals
-if (any(
-  c.UID %in% names(evals) == FALSE,
-  c.CRN %in% names(evals) == FALSE,
-  c.SUB %in% names(evals) == FALSE,
-  c.CRS %in% names(evals) == FALSE,
-  c.SEC %in% names(evals) == FALSE,
-  c.TITLE %in% names(evals) == FALSE,
-  c.COM %in% names(evals) == FALSE,
-  c.SEM %in% names(evals) == FALSE,
-  c.Q1 %in% names(evals) == FALSE,
-  c.Q2 %in% names(evals) == FALSE,
-  c.Q3 %in% names(evals) == FALSE,
-  c.Q4 %in% names(evals) == FALSE,
-  c.Q5 %in% names(evals) == FALSE,
-  c.Q6 %in% names(evals) == FALSE,
-  c.Q7 %in% names(evals) == FALSE,
-  c.Q8 %in% names(evals) == FALSE
-)
-== TRUE) {
-  cat("ERROR: There is a missing column in the input!")
+valid.cns <- c(c.UID, c.CRN, c.SUB, c.CRS, c.SEC, c.TITLE, c.COM, c.SEM, c.Q1, c.Q2, c.Q3, c.Q4, c.Q5, c.Q6, c.Q7, c.Q8)
+err <- all(valid.cns %in% names(evals))
+if (!err) {
+  cat("ERROR: There is a missing column in the input!\n")
+  cat("Missing columns: \n")
+  print(valid.cns[-which(valid.cns %in% names(evals))])
   while(1){}
-  # which(colname.flags == TRUE)
 }
 
 ##  COLUMN NUMBER CONFIGURATION ##

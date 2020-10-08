@@ -256,6 +256,7 @@ create.export.ss <- function(reports.by.codes) {
     dups <- which(table(names(ss[[1]])) > 1)
     dups.ss.ind <- list()
     
+    css <- list()
     if (length(dups) > 0) {
       for (prof in names(dups)) {
         course <- ss[[1]]
@@ -282,7 +283,6 @@ create.export.ss <- function(reports.by.codes) {
         combined.sections <-
           paste(combined.sections, collapse = " ")
         
-        css <- list()
         css[[course.title]][[prof]][[combined.sections]][["ratings"]] <-
           ratings
         css[[course.title]][[prof]][[combined.sections]][["freqs"]] <-
@@ -295,13 +295,13 @@ create.export.ss <- function(reports.by.codes) {
         # ss[dups.ss.ind] <- NULL
         # ss[[(length(ss) + 1)]] <- css
         
-        ss <- css
+        # ss <- css
         print(prof)
         print(combined.average)
       }
     }
     
-    export.semester.summary(ss, s = TRUE)
+    export.semester.summary(css, s = TRUE)
   }
 }
 

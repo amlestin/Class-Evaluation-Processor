@@ -25,20 +25,16 @@ library("scales")
 library("data.table")
 
 # load helper functions from src directory
-setwd("/Users/arnoldlestin/Downloads/Class-Evaluation-Processor/")
-source("/Users/arnoldlestin/Downloads/Class-Evaluation-Processor/src/helpers.R")
+setwd("/Users/Scott Upman/Desktop/Output Files/Class-Evaluation-Processor")
+source("/Users/Scott Upman/Desktop/Github Repositories/Class-Evaluation-Processor/src/helpers.R")
 #source("/src/helpers.R")
 #source("src/helpers.R")
 #source("C:/Users/Arnold/Documents/Class-Evaluation-Processor/src/helpers.R")
 
 # opens an explorer window to select the input files
-# winDialog(type = c("ok"),
-#           "Select the report file you exported from Qualtrics after the evaluation.")
+winDialog(type = c("ok"), "Select the report file you exported from Qualtrics after the evaluation.")
 evaluations.filename <- file.choose()
-# winDialog(
-#   type = c("ok"),
-#   "Select the contacts file you imported into Qualtrics before the evaluation."
-# )
+winDialog(type = c("ok"), "Select the contacts file you imported into Qualtrics before the evaluation.")
 student.contacts.filename <- file.choose()
 
 #  read in the contact and distribution files

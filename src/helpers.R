@@ -59,6 +59,7 @@ course.size.from.sections <- function(course.codes) {
   return(course.size)
 }
 
+### FOCUS
 split.course.summary <- function(course.index, semester.summary) {
   course.title <- names(semester.summary)[[course.index]]
   course.sections <-
@@ -142,6 +143,7 @@ split.course.summary <- function(course.index, semester.summary) {
         
       }
     }
+    # TODO: Loop until the user puts in the correct input
     else {
       print("ERROR: invalid section index. Please restart script.")
       return(NULL)
@@ -152,6 +154,7 @@ split.course.summary <- function(course.index, semester.summary) {
   return(reports)
 }
 
+# Only deals with splitting reports, ### FOCUS
 create.export.ss <- function(reports.by.codes) {
   course.title <- names(reports.by.codes)[1]
   
@@ -283,6 +286,7 @@ create.export.ss <- function(reports.by.codes) {
         combined.sections <-
           paste(combined.sections, collapse = " ")
         
+        
         css[[course.title]][[prof]][[combined.sections]][["ratings"]] <-
           ratings
         css[[course.title]][[prof]][[combined.sections]][["freqs"]] <-
@@ -305,6 +309,8 @@ create.export.ss <- function(reports.by.codes) {
   }
 }
 
+# Takes review list as a parameter, 
+### FOCUS: To understand this function, you need to understand the reviewl parameter
 create.semester.summary <- function(reviewl) {
   # character vector of the title of every course evaluated
   unique.titles <- as.character(unique(student.contacts[, c.TITLE]))
@@ -375,6 +381,8 @@ create.semester.summary <- function(reviewl) {
   return(semester.summary)
 }
 
+# Takes semester.summary as a parameter and exports the summary onto a workbook, 
+### FOCUS: To understand this function you must understand the semester.summary parameter
 export.semester.summary <- function(semester.summary, s = FALSE) {
   report.col.names  <-
     c("Professor", "Average", "Responses", "Poor", "Fair", "Good", "Very Good", "Excellent")
@@ -388,7 +396,17 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
     
     
     
+  
+    
     uscs.formatted <- paste(unique.sections, collapse = ' ')
+    
+    
+    #TODO: When there are multiple sections with the same class number and same professor names,
+    # automatically merge the sections
+    
+    ### Section begins split prompt
+    # When the number of unique.sections is greater than 1, split prompt activates
+    # TODO: Automatically merge whenever section numbers match the course director and all the professors within each section
     if ((s == FALSE) && length(unique.sections) > 1) {
       cat(
         paste(
@@ -425,9 +443,11 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
         # semester.summary <- semester.summary[-course.index]
         next()
       }
+    ### Section ends split prompt
       
     }
     
+    ### generating the workbook to put the evaluations in
     sheet.number <- 1
     wb <- createWorkbook("Admin")
     addWorksheet(wb, sheet.number) # add modified report to a worksheet

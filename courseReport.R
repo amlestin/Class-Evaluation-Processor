@@ -24,8 +24,21 @@ library("openxlsx")
 library("scales")
 library("data.table")
 
+#TODO: Edit how directories work later
+# directory_name <- dirname(rstudioapi::getSourceEditorContext()$path)
+# setwd(directory_name)
+# setwd("/..")
+# print(getwd())
+
+setwd("/Users/Scott Upman/Desktop/")
+
+# Creates a reports file on to the desktop
+if ("reports" %in% list.files() == FALSE)
+  dir.create("reports")
+setwd("reports")
+
+#
 # load helper functions from src directory
-setwd("/Users/Scott Upman/Desktop/Output Files/Class-Evaluation-Processor")
 source("/Users/Scott Upman/Desktop/Github Repositories/Class-Evaluation-Processor/src/helpers.R")
 #source("/src/helpers.R")
 #source("src/helpers.R")
@@ -96,10 +109,6 @@ if (!err) {
 num.prof.cols <- length(grep(c.PROF, names(evals)))
 num.ta.cols <- length(grep(c.PROF, names(evals)))
 
-# sets the directory to output reports files to
-if ("reports" %in% list.files() == FALSE)
-  dir.create("reports")
-setwd("reports")
 
 # check for duplicate professors in the student contacts
 # only checks this method if contacts file has CRNs
@@ -142,12 +151,18 @@ if (c.CRN %in% names(student.contacts) == TRUE) {
 
 # determines course sizes by counting student contacts per course
 all.codes <- c()
-for (i in 1:nrow(student.contacts)) {
-  s.code <- as.character(student.contacts[i, c.SUB])
-  c.num <- as.character(student.contacts[i, c.CRS])
-  s.num <- as.character(student.contacts[i, c.SEC])
+for (i in 1:nrow(student.contacts)) 
+{
+  # Subject Code
+  subject_code <- as.character(student.contacts[i, c.SUB])
   
-  code <- paste(s.code, c.num, s.num, sep = ".")
+  # Course number code
+  course_num <- as.character(student.contacts[i, c.CRS])
+  
+  # Section number code
+  section_num <- as.character(student.contacts[i, c.SEC])
+  
+  code <- paste(subject_code, course_num, section_num, sep = ".")
   all.codes <- c(all.codes, code)
 }
 
@@ -155,9 +170,14 @@ unique.codes <- unique(all.codes)
 course.sizes <- list(all.codes)
 
 for (code in 1:length(unique.codes)) {
+  
+  # Contains course code for each element in unique.codes vector
   cur.code <- unique.codes[code]
-  course.sizes[[cur.code]] <- length(which(all.codes == cur.code))
+  
+  # Inserts lengths of the courses into the course.sizes list
+  course.sizes[[cur.code]] <- length(which(all.codes == cur.code)) ## number of students that are in the course
 }
+# Converts the all.codes vector to a list
 course.codes.to.crn <- list(all.codes)
 
 
@@ -440,15 +460,21 @@ if (length(error.log) > 0) {
   
 }
 
+# Calls the semester.summary function and passes the review list as an argument 
 semester.summary <- create.semester.summary(reviewl)
 sci <-
   which(lengths(lapply(1:length(semester.summary), function(x)
     unique(find.sections.by.course(x, semester.summary)))) > 1)
 
 sc <- semester.summary[sci]
+
+# Calls the export.semester.summary passing sc as an argument
 export.semester.summary(sc)
 
+# Semester.summary is a list
 semester.summary <- semester.summary[-sci]
+
+# Calls the function to output the final semester.summary
 export.semester.summary(semester.summary)
 
 if (num.ta.cols <= 0) {

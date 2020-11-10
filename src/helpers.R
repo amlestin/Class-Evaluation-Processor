@@ -305,6 +305,7 @@ create.export.ss <- function(reports.by.codes) {
       }
     }
     
+    # css is the argument where semester.summary is the parameter for css
     export.semester.summary(css, s = TRUE)
   }
 }
@@ -430,12 +431,15 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
       
       if (j == "S") {
         # Create split report
-        reports.by.codes <- NULL
+        reports.by.codes <- split.course.summary(course.index, semester.summary)
         
-        while (is.null(reports.by.codes)) {
-          reports.by.codes <-
-            split.course.summary(course.index, semester.summary)
-        }
+        ### I think this is unneccessary
+        # reports.by.codes <- NULL
+        
+        # while (is.null(reports.by.codes)) {
+        #   reports.by.codes <-
+        #     split.course.summary(course.index, semester.summary)
+        # }
         
         create.export.ss(reports.by.codes)
         

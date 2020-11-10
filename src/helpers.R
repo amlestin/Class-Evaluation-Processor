@@ -152,6 +152,7 @@ split.course.summary <- function(course.index, semester.summary) {
   return(reports)
 }
 
+# TODO: Function has subscript error with css, also tried to change brackets with the dups
 create.export.ss <- function(reports.by.codes) {
   course.title <- names(reports.by.codes)[1]
   
@@ -283,6 +284,7 @@ create.export.ss <- function(reports.by.codes) {
         combined.sections <-
           paste(combined.sections, collapse = " ")
         
+        # Error: Empty List
         css[[course.title]][[prof]][[combined.sections]][["ratings"]] <-
           ratings
         css[[course.title]][[prof]][[combined.sections]][["freqs"]] <-
@@ -292,6 +294,7 @@ create.export.ss <- function(reports.by.codes) {
         css[[course.title]][[prof]][[combined.sections]][["response.rate"]] <-
           percent(length(ratings) / combined.size)
         
+ 
         # ss[dups.ss.ind] <- NULL
         # ss[[(length(ss) + 1)]] <- css
         
@@ -412,12 +415,16 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
       
       if (j == "S") {
         # Create split report
-        reports.by.codes <- NULL
         
-        while (is.null(reports.by.codes)) {
-          reports.by.codes <-
-            split.course.summary(course.index, semester.summary)
-        }
+        reports.by.codes <- split.course.summary(course.index, semester.summary)
+        
+        ### This may be unnecessary
+        # reports.by.codes <- NULL
+        # 
+        # while (is.null(reports.by.codes)) {
+        #   reports.by.codes <-
+        #     split.course.summary(course.index, semester.summary)
+        # }
         
         create.export.ss(reports.by.codes)
         

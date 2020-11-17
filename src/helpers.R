@@ -156,7 +156,7 @@ split.course.summary <- function(course.index, semester.summary) {
 create.export.ss <- function(reports.by.codes) {
 
   course.title <- names(reports.by.codes)[1]
-  
+  css <- list()
   # TODO: remove dependency on reviews.by.course.code
   reviews <- reviews.by.course.code[course.title]
   reviews.by.section <-
@@ -258,7 +258,7 @@ create.export.ss <- function(reports.by.codes) {
     dups <- which(table(names(ss[[1]])) > 1)
     dups.ss.ind <- list()
     
-    css <- list()
+    
     if (length(dups) > 0) {
       for (prof in names(dups)) {
         course <- ss[[1]]
@@ -285,7 +285,7 @@ create.export.ss <- function(reports.by.codes) {
         combined.sections <-
           paste(combined.sections, collapse = " ")
         
-        # Error: Empty List
+        # Error: Empty List when being iterated through
         css[[course.title]][[prof]][[combined.sections]][["ratings"]] <-
           ratings
         css[[course.title]][[prof]][[combined.sections]][["freqs"]] <-
@@ -305,6 +305,7 @@ create.export.ss <- function(reports.by.codes) {
       }
     }
     
+    # This leads into a call passing css as an empty parameter.
     export.semester.summary(css, s = TRUE)
   }
 }
@@ -421,12 +422,16 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
         
         ### This may be unnecessary
         # reports.by.codes <- NULL
-        # 
+         
         # while (is.null(reports.by.codes)) {
-        #   reports.by.codes <-
-        #     split.course.summary(course.index, semester.summary)
-        # }
+        #  reports.by.codes <-
+        #    split.course.summary(course.index, semester.summary)
+        }
         
+        # This call gives subscript error
+        # Passes reports.by.codes and then within create.export.ss function, export.semester.summary gets called again and since css is length 0...
+        # The call breaks
+        # It's as if this is a recursive function which I wouldn't think would be optimal.
         create.export.ss(reports.by.codes)
         
         # split the relevant sections manually and remove them from semester.summary

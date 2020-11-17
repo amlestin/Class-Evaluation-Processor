@@ -25,8 +25,8 @@ library("scales")
 library("data.table")
 
 # load helper functions from src directory
-setwd("/Users/Scott Upman/Desktop")
-source("/Users/Scott Upman/Desktop/Github Repositories/Class-Evaluation-Processor/src/helpers.R")
+
+source("/Users/User/Desktop/Files/GitHub repositories/Class-Evaluation-Processor/src/helpers.R")
 #source("/src/helpers.R")
 #source("src/helpers.R")
 #source("C:/Users/Arnold/Documents/Class-Evaluation-Processor/src/helpers.R")

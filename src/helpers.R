@@ -154,6 +154,7 @@ split.course.summary <- function(course.index, semester.summary) {
 
 # TODO: Function has subscript error with css, also tried to change brackets with the dups
 create.export.ss <- function(reports.by.codes) {
+
   course.title <- names(reports.by.codes)[1]
   
   # TODO: remove dependency on reviews.by.course.code

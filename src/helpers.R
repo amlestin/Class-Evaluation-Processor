@@ -1,3 +1,5 @@
+
+# 
 find.sections.by.course <-
   function(course.index, semester.summary) {
     sections <- c()
@@ -59,6 +61,7 @@ course.size.from.sections <- function(course.codes) {
   return(course.size)
 }
 
+# The prompt should be in the main file
 split.course.summary <- function(course.index, semester.summary) {
   course.title <- names(semester.summary)[[course.index]]
   course.sections <-
@@ -1050,7 +1053,7 @@ export.semester.summary <- function(semester.summary, s = FALSE) {
     # writes a workbook containing all reports inputted
     saveWorkbook(wb, paste(file.name, ".xlsx", sep = ""), overwrite = TRUE)
   }
-}
+
 
 
 

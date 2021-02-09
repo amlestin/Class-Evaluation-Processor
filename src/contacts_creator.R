@@ -31,6 +31,14 @@ contacts["PROF13"] <- NA
 contacts["PROF14"] <- NA
 contacts["PROF15"] <- NA
 contacts["PROF16"] <- NA
+contacts["PROF17"] <- NA
+contacts["PROF18"] <- NA
+contacts["PROF19"] <- NA
+contacts["PROF20"] <- NA
+contacts["PROF21"] <- NA
+contacts["PROF22"] <- NA
+contacts["PROF23"] <- NA
+contacts["PROF24"] <- NA
 
 contacts["TA1"] <- NA
 contacts["TA2"] <- NA
